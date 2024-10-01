@@ -1,0 +1,406 @@
+---
+title: "Flow Statistical Modeling Cluster Based: Pre-RA Aim 1"
+subtitle: "Reclustering, removal of <-750 DTC from global sample selction"
+author: "Nicole Tran"
+date: "2023-11-29"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+---
+
+# Aim1 Cluster Level 
+
+# Analysis
+
+*Goal*: Define the baseline molecular and cellular differences that distinguish ACPA+ at-risk individuals from site-matched healthy controls  (ALTRA at-risk vs ALTRA HCs) by utilizing flow frequencies of subpopulations
+
+*Adjustments*: pseudocounts to help with subsampling and clr ca
+
+## Set Up
+```{r, setup}
+`%notin%` <- Negate(`%in%`)
+
+outersect <- function(x, y) {
+  sort(c(setdiff(x, y),
+         setdiff(y, x)))
+}
+
+library(tidyverse)
+library(ggpubr)
+library(readxl)
+library(stats)
+suppressMessages(library('ggplot2'))
+suppressMessages(library('data.table'))
+suppressMessages(library('reshape2'))
+suppressMessages(library('readr'))
+suppressMessages(library('purrr'))
+suppressMessages(library('plotly'))
+suppressMessages(library('DT'))
+library(broom)
+
+# define the color palette to be used
+npg_color <- c("#E64B35FF", "#4DBBD5FF", "#00A087FF", "#3C5488FF", "#F39B7FFF", 
+               "#8491B4FF", "#91D1C2FF", "#DC0000FF", "#7E6148FF", "#B09C85FF")
+nejm_color <- c("#BC3C29FF", "#0072B5FF", "#E18727FF", "#20854EFF", "#7876B1FF", "#6F99ADFF", "#FFDC91FF", "#EE4C97FF")
+jama_color <- c("#374E55FF", "#DF8F44FF", "#00A1D5FF", "#B24745FF", "#79AF97FF", "#6A6599FF", "#80796BFF")
+jco_color <- c("#0073C2FF", "#EFC000FF", "#868686FF", "#CD534CFF", "#7AA6DCFF", "#003C67FF", "#8F7700FF")
+cluster_colors <- c("#DC050C", "#FB8072", "#1965B0", "#7BAFDE", "#882E72", "#B17BA6", "#FF7F00", "#FDB462", "#E7298A", 
+                    "#E78AC3", "#33A02C", "#B2DF8A", "#55A1B1", "#8DD3C7", "#A6761D", "#E6AB02", "#7570B3", "#BEAED4", "#666666", "#999999", 
+                    "#aa8282", "#d4b7b7", "#8600bf", "#ba5ce3", "#808000", "#aeae5c", "#1e90ff", "#00bfff", "#56ff0d", "#ffff00")
+cluster_colors_ext <- colorRampPalette(cluster_colors)(40)
+
+
+################################################################################
+#### functions ####
+################################################################################
+# Defnie a function to do clr transformatin from frequency table
+FreqClrTran <- function(freq_table, freq_col='frequency_live', celltype_col='labels', sample_col='sample_id'){
+    require('compositions')
+    freq <- freq_table %>% select(all_of(c(freq_col, celltype_col, sample_col))) %>% 
+        pivot_wider(id_cols = .data[[sample_col]], names_from =.data[[celltype_col]],
+                    values_from = .data[[freq_col]])
+    freq_mx <- freq %>% select(-.data[[sample_col]]) %>% as.matrix()
+    rownames(freq_mx) <- freq[[sample_col]]
+    freq_clr <- compositions::clr(freq_mx) %>% as_tibble(rownames = sample_col) %>% 
+        pivot_longer(cols=c(-.data[[sample_col]]), names_to = celltype_col, values_to = 'clr') 
+    freq_meta_clr <- freq_table %>% full_join(freq_clr, by = c(sample_col,celltype_col))
+    return(freq_meta_clr)
+}
+
+
+# run glm pretreatment vs healthy 
+freq_glm <- function(freq_table, formula, cell_type){
+    glm_res <- broom::tidy(stats::glm(as.formula(formula), data=freq_table)) 
+    return(glm_res)
+}
+
+
+################################################################################
+#### params ####
+################################################################################
+setwd("/Users/nicole.tran/Library/CloudStorage/GoogleDrive-nicole.tran@alleninstitute.org/Shared drives/Imm - Data/Immunology Projects/PID-00005 Autoimmunity/PLAN-00118 Pre-RA Longitudinal Analysis/Data and Analysis/flow cytometry/statistical-testing/scripts/")
+
+meta_aim_path <-  "~/Library/CloudStorage/GoogleDrive-nicole.tran@alleninstitute.org/Shared drives/Imm - Data/Immunology Projects/PID-00005 Autoimmunity/PLAN-00118 Pre-RA Longitudinal Analysis/Data and Analysis/Metadata/ALTRA_RA_Aim1_ALTRA_at_risk_vs_HCs_scrna_metadata.csv"
+
+# create the directory to save figures and output
+results_path <- '~/Library/CloudStorage/GoogleDrive-nicole.tran@alleninstitute.org/Shared drives/Imm - Data/Immunology Projects/PID-00005 Autoimmunity/PLAN-00118 Pre-RA Longitudinal Analysis/Data and Analysis/flow cytometry/statistical-testing/results/current/'
+data_path <- '~/Library/CloudStorage/GoogleDrive-nicole.tran@alleninstitute.org/Shared drives/Imm - Data/Immunology Projects/PID-00005 Autoimmunity/PLAN-00118 Pre-RA Longitudinal Analysis/Data and Analysis/flow cytometry/statistical-testing/data/current/'
+
+# directory of raw counts 
+freq_file_paths <- "../../raw-data/leiden-cluster-freq-tabls-current/"
+
+if(!dir.exists(results_path)){dir.create(results_path,recursive = TRUE)}
+if(!dir.exists(data_path)){dir.create(data_path,recursive = TRUE)}
+options(repr.plot.width = 20, repr.plot.height = 15)
+
+aim <- 'Aim1'
+
+clr_dir <-paste0(data_path, "clr-freq/")
+if(!dir.exists(clr_dir)){dir.create(clr_dir,recursive = TRUE)}
+
+da_dir <-paste0(data_path, "da-results/")
+if(!dir.exists(da_dir)){dir.create(da_dir,recursive = TRUE)}
+
+```
+
+# Read in
+
+```{r}
+aim <- 'Aim1'
+method <- 'GLM'
+form <- 'clr ~ status + subject.biologicalSex + age + BMI'
+
+################################################################################
+#### automate aim  per panel ####
+################################################################################
+
+meta_aim <- read_csv(meta_aim_path)
+
+# include bmi info
+meta_bmi <- read_csv("~/Library/CloudStorage/GoogleDrive-nicole.tran@alleninstitute.org/Shared drives/Imm - Data/Immunology Projects/PID-00005 Autoimmunity/PLAN-00118 Pre-RA Longitudinal Analysis/Data and Analysis/Metadata/2023-11-22_ALTRA_Metadata_labs_long-model-vars.csv")
+
+meta_bmi <- meta_bmi %>% select(sample.sampleKitGuid,subject.subjectGuid,BMI)
+
+# select sample and new attritbutes from meta_aim
+meta_aim <- meta_aim %>% select(sample.sampleKitGuid,file.batchID, subject.subjectGuid, status, subject.biologicalSex, age)
+
+# merge bmi and conversion meta with aim sample meta
+meta_aim <- meta_aim %>% inner_join(meta_bmi)
+
+freq_tbl_path <- list.files(freq_file_paths, pattern = "*pseudocount.csv",include.dirs = T, full.names = T)
+
+
+freq_tbl_path <- freq_tbl_path[!grepl("bridging_ctrl",freq_tbl_path)]
+
+analysis <- gsub(".*select_(.*)\\_pseudocount.csv", "\\1", freq_tbl_path)
+
+
+```
+
+
+
+
+
+# CLR + Statistical Results
+
+
+```{r, results='asis'}
+################################################################################
+#### aim params ####
+################################################################################
+aim <- 'Aim1'
+method <- 'GLM'
+form <- 'clr ~ status + subject.biologicalSex + age + BMI'
+
+da_res_df <- list()
+clr_res_df <- list()
+
+for(i in seq_along(analysis)){
+
+  print(analysis[i])
+  
+  panel <- str_extract(analysis[i],pattern = 'P.\\d')
+  
+  freq_tbl <- read_csv(freq_tbl_path[i]) 
+  
+  # create sample.sampleKitGuid column
+  #freq_tbl$sample.sampleKitGuid <- paste0("KT",gsub("^PB(.*)\\-\\d\\d","\\1", freq_tbl$sample_id))
+  
+  freq_tbl$batch <- panel
+  
+   # remove duplicated sample and label levels
+  freq_tbl <- freq_tbl %>% distinct(sample.sampleKitGuid, cluster, .keep_all = T)
+  
+  freq_tbl$labels <- paste(freq_tbl$cluster,analysis[i],sep = "_")
+  
+  # # Rename columns starting with "downsample_"
+  # freq_tbl <- freq_tbl %>%
+  #   rename_with(~ "cell_type_total", starts_with("downsample_"))
+  
+  # merge metadata for aim1 with frequency table, select only aim 1 samples
+  freq_tbl_aim_meta <- freq_tbl %>% inner_join(meta_aim)
+  
+  # relevel RA status, ensure HC is first level as reference for glm model
+  freq_tbl_aim_meta$status <- factor(freq_tbl_aim_meta$status,
+                                   levels = c("ALTRA Healthy", "ACPA+ at_risk"))
+  
+  ################################################################################
+  #### perform CLR transformation ####
+  ################################################################################
+  freq_tbl_aim_meta_clr <- FreqClrTran(freq_tbl_aim_meta,freq_col = "frequency_live_pseudocount")
+  
+  
+  clr_res_df[[analysis[i]]] <- freq_tbl_aim_meta_clr
+  
+  
+  ################################################################################
+  #### GLM ####
+  ################################################################################
+  freq_stats_glm <- freq_tbl_aim_meta_clr %>%
+      group_by(labels) %>% 
+      group_modify(~freq_glm(.x, formula=form)) %>%
+    rstatix::adjust_pvalue(p.col = 'p.value', method = "BH") %>%
+    ungroup()
+  
+  # calculate the pval adj grouped by covariate
+  freq_stats_glm <- freq_stats_glm %>% group_by(term) %>%
+    rstatix::adjust_pvalue( method = "BH") %>% ungroup()
+  
+  
+  
+  # calculate number of patients per cell type/feature
+  n_patients_per_feature <- freq_tbl_aim_meta_clr %>% group_by(labels) %>% 
+    summarise(N = n_distinct(subject.subjectGuid))
+  
+  da_res_df[[i]] <- freq_stats_glm %>% mutate(Aim = aim,
+                            Analysis = analysis[i],
+                            Method = method,
+                            Formula = form) %>%
+    inner_join(n_patients_per_feature) %>%
+    rename(CellType = labels,
+           Covariate = term)
+  
+}
+
+clr_freq <- rbindlist(clr_res_df)
+da_res <- rbindlist(da_res_df)
+
+## add sig symbol to df of only the positive covariate
+da_res <- da_res%>%
+  rstatix::add_significance(p.col = 'p.value.adj', output.col = 'sig',
+                          cutpoints = c(0, 0.05, 0.2, 1),
+                          symbols = c( "*", "<0.2", "ns"))%>%
+ungroup()
+
+################################################################################
+#### export results ####
+################################################################################
+clr_dir <-paste0(data_path, "clr-freq/")
+if(!dir.exists(clr_dir)){dir.create(clr_dir,recursive = TRUE)}
+
+write_csv(clr_freq, paste0(clr_dir, "pre-ra_flow_freq_tbl_clr_trans_cluster_res_recluster_v3_", aim, ".csv"))
+
+da_dir <-paste0(data_path, "da-results/")
+if(!dir.exists(da_dir)){dir.create(da_dir,recursive = TRUE)}
+
+write_csv(da_res, paste0(da_dir, "pre-ra_flow_DA_statistical_results_cluster_res_pseudocount_recluster_v3_", aim, ".csv"))
+
+
+```
+
+
+
+
+# Plot 
+
+```{r}
+aim_results_path <- paste0(results_path, aim, "/")
+if(!dir.exists(aim_results_path)){dir.create(aim_results_path,recursive = TRUE)}
+
+aim <- 'Aim1'
+method <- 'GLM'
+form <- 'clr ~ status + subject.biologicalSex + age + BMI'
+
+da_res <- read_csv(paste0(da_dir, "pre-ra_flow_DA_statistical_results_cluster_res_pseudocount_recluster_v3_Aim1.csv"))
+
+## add sig symbol to df of only the positive covariate
+da_res <- da_res%>%
+  rstatix::add_significance(p.col = 'p.value.adj', output.col = 'sig',
+                          cutpoints = c(0, 0.05, 0.2, 1),
+                          symbols = c( "*", "<0.2", "ns"))%>%
+ungroup()
+
+
+# reorder covar levels
+da_res <- da_res %>% mutate(Covariate = factor(Covariate, levels = c("(Intercept)",
+                                                           "statusACPA+ at_risk",
+                                                           "subject.biologicalSexMale",
+                                                           "age")))
+
+clr_freq <- read_csv(paste0(clr_dir, "pre-ra_flow_freq_tbl_clr_trans_cluster_res_recluster_v3_Aim1.csv"))
+
+# relevel RA status, ensure HC is first level as reference for glm model
+clr_freq$status <- factor(clr_freq$status, levels = c("ALTRA Healthy", "ACPA+ at_risk"))
+
+analysis <- da_res$Analysis %>% unique()
+
+for(i in seq_along(analysis)){
+    proj_name <- paste0(aim, "_", analysis[i])
+
+  
+  # subset current panel, filter DA terms by positive status only, filter pval adj, pull significant features/subpops
+  
+  da_df <- da_res %>% filter(Analysis %in% analysis[i]) %>%
+    filter(Covariate =='statusACPA+ at_risk') %>% 
+    filter(p.value.adj<0.2) %>% 
+    arrange(p.value.adj) %>%
+    mutate(CellType = as.factor(CellType))
+  
+  if(nrow(da_df) == 0){
+    next
+  }else{ 
+  
+  p <- clr_freq %>% filter(labels %in% da_df$CellType)%>%
+    ggplot(aes(x=status, y=clr))+
+   geom_violin(aes(fill=status)) + 
+   geom_jitter(width = 0.2, size=0.8) +
+   facet_wrap(vars(labels), scales = 'free_y') +
+    ggtitle(analysis[i], 
+            subtitle = paste(unique(da_df$Aim), "Covariate:", unique(da_df$Covariate), "\n",
+                             "Formula:", unique(da_df$Formula), "\n",
+                             "Adjust Pvalue < 0.2"))
+  
+
+  ggsave(plot = p,
+         file.path(aim_results_path, paste0(proj_name, '_sig_glm_frequency_clr.png')),
+         width=18, height=8)
+  }
+  
+  # ### plot pvalue distributions for all covariates
+  # h <- da_res %>%
+  #  filter(Analysis %in% analysis[i]) %>%
+  #     #filter(Covariate=='days_to_conversion') %>%
+  #   ggplot(., aes(x=p.value.adj,color = Covariate, fill=Covariate)) +
+  #   geom_histogram(bins = 25)+
+  #   geom_vline(xintercept = .2, linetype="dotted",
+  #                 color = "red", size=1) +
+  #   facet_wrap(~`CellType`) +
+  #   ggtitle(analysis[i],
+  #               subtitle = paste(unique(da_df$Aim),  "\n",
+  #                                "Formula:", unique(da_df$Formula)))
+  # 
+  # 
+  # ggsave(plot = h,
+  #        file.path(results_path, paste0(proj_name, '_adj.p_values_distribution.png')),
+  #        width=15, height=10)
+  # 
+  # volcano plot
+    # v <- da_res %>%
+    # #filter(Analysis %in% analysis[i]) %>%
+    #   filter(Covariate =='statusACPA+ at_risk') %>% 
+    # ggplot(aes(x=estimate, y= (-log(p.value.adj)),
+    #                            color=sig, shape = Covariate)) +
+    # geom_point() +
+    # facet_wrap(vars(Analysis), scales = 'free_y') + geom_vline(xintercept = 0)+
+    # ggtitle(analysis[i], 
+    #           subtitle = paste(unique(da_df$Aim),  "\n",
+    #                            "Formula:", unique(da_df$Formula)))
+    # v
+    # 
+    #  ggsave(plot = v,
+    #      file.path(aim_results_path, paste0(proj_name, '_covariate_volcano_plot.png')), 
+    #      width=15, height=10)
+
+}
+
+```
+
+# Merge Cluster with Cell type annotations
+
+```{r}
+aim = "Aim1"
+
+annotations <- read_csv("../data/current/FC_Leiden_summary_cluster_IDs.csv")
+
+# split unique label column
+annotations <- annotations %>% separate_wider_delim(unique_label, delim = "---", names = c("Analysis", "CellType"))
+
+################################################################################
+#### DA ####
+################################################################################
+
+da_res <- read_csv(paste0(data_path, "pre-ra_flow_DA_statistical_results_cluster_res_pseudocount_", aim, ".csv"))
+
+# inner merge da results with annotations
+da_res_merged <- da_res %>% left_join(annotations) 
+
+da_res_merged$labels <- da_res_merged$CellType
+
+write_csv(da_res_merged, file = paste0(data_path, "annotations/", "pre-ra_flow_DA_statistical_results_cluster_res_pseudocount_annotations_", aim, ".csv"))
+
+
+################################################################################
+#### CLR ####
+################################################################################
+clr_freq <- read_csv(paste0(data_path, "pre-ra_flow_freq_tbl_clr_trans_cluster_res_pseudocount_", aim, ".csv"))
+
+clr_freq$Analysis <- paste0('Flow_DA_',clr_freq$panel)
+
+
+# inner merge da results with annotations
+clr_freq_merged <- clr_freq %>% left_join(annotations,
+                                          by = c("labels" = "CellType",
+                                                 "Analysis" = "Analysis"))
+
+clr_freq_merged$Aim <- aim
+
+write_csv(clr_freq_merged, file = paste0(data_path, "annotations/", "pre-ra_flow_freq_tbl_clr_trans_cluster_res_annotations_", aim, ".csv"))
+
+
+
+```
+
+
+
+
