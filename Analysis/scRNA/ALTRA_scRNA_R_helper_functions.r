@@ -5,9 +5,13 @@
 # It reads a CSV file containing subject colors and assigns them to the corresponding subject GUIDs.
 # The function `scale_color_subj` is defined to create a manual color scale using the subject colors.
 
-subj_colors_list <- read_csv(file.path('/home/jupyter/github/ra-longitudinal/metadata',
-                                       "ALTRA_longtidunal_subject_colors.csv"),
-    show_col_types = FALSE)
+subj_colors_list <- read_csv(
+    file.path(
+        "/home/jupyter/github/ra-longitudinal/metadata",
+        "ALTRA_longtidunal_subject_colors.csv"
+    ),
+    show_col_types = FALSE
+)
 subject_colors <- c(subj_colors_list$subj_colors)
 names(subject_colors) <- subj_colors_list$subject.subjectGuid
 
@@ -48,21 +52,24 @@ calculate_pseudo_frequencies <- function(so_labels_fl, celltype_column, sample_i
         as_tibble() %>%
         group_by(!!sym(sample_id_column)) %>%
         # Calculate the total counts for each sample
-        mutate(total_counts = n()) %>% ungroup() %>%
+        mutate(total_counts = n()) %>%
+        ungroup() %>%
         # Convert cell type and sample ID columns to factors
-        mutate(!!celltype_column := factor(!!sym(celltype_column)),
-               !!sample_id_column := factor(!!sym(sample_id_column))) %>%
+        mutate(
+            !!celltype_column := factor(!!sym(celltype_column)),
+            !!sample_id_column := factor(!!sym(sample_id_column))
+        ) %>%
         # Group by cell type and sample ID, then calculate counts for each group
         group_by(!!sym(celltype_column), !!sym(sample_id_column), .drop = FALSE) %>%
-        summarise(counts = n(), .groups = 'drop') %>%
-        ungroup() %>% 
+        summarise(counts = n(), .groups = "drop") %>%
+        ungroup() %>%
         # Add 1 to each count to calculate pseudo counts
         mutate(pseudo_counts = counts + 1)
-    
+
     # Calculate the total pseudo counts for each sample
     pseudo_total_counts <- so_labels_freq %>%
         group_by(!!sym(sample_id_column)) %>%
-        summarise(pseudo_total_counts = sum(pseudo_counts), .groups = 'drop')
+        summarise(pseudo_total_counts = sum(pseudo_counts), .groups = "drop")
 
     # Join the total pseudo counts back to the main data frame
     so_labels_freq <- so_labels_freq %>%
@@ -72,19 +79,19 @@ calculate_pseudo_frequencies <- function(so_labels_fl, celltype_column, sample_i
     meta_keep <- so_labels_fl %>%
         as_tibble() %>%
         select(!!sym(sample_id_column), all_of(metadata_columns)) %>%
-        distinct(!!sym(sample_id_column), .keep_all=TRUE)
+        distinct(!!sym(sample_id_column), .keep_all = TRUE)
 
     # Join the metadata back to the main data frame
     so_labels_freq_meta <- so_labels_freq %>%
         left_join(meta_keep, by = sample_id_column) %>%
         # Calculate the live frequency for each cell type within each sample
         group_by(!!sym(sample_id_column)) %>%
-        mutate(frequency= counts / sum(counts))
+        mutate(frequency = counts / sum(counts))
 
     # Calculate the pseudo frequency live for each cell type within each sample
     so_labels_freq_meta <- so_labels_freq_meta %>%
         group_by(!!sym(sample_id_column)) %>%
-        mutate(pseudo_frequency = pseudo_counts / sum(pseudo_counts)) %>% 
+        mutate(pseudo_frequency = pseudo_counts / sum(pseudo_counts)) %>%
         ungroup()
     return(so_labels_freq_meta)
 }
@@ -112,7 +119,7 @@ calculate_pseudo_frequencies <- function(so_labels_fl, celltype_column, sample_i
 #' frequencies.
 #' @examples
 #' # Assuming `freq_data` is your frequency table:
-#' clr_transformed <- FreqClrTran(freq_data, 'frequency_live', 'labels', 'sample_id', 'clr')
+#' clr_transformed <- FreqClrTran(freq_data, "frequency_live", "labels", "sample_id", "clr")
 #' @export
 FreqClrTran <- function(freq_table, freq_col = "frequency_live", celltype_col = "labels", sample_col = "sample_id",
                         clr_name = "clr") {
@@ -151,7 +158,7 @@ FreqClrTran <- function(freq_table, freq_col = "frequency_live", celltype_col = 
 #   - freq_table: A data frame containing the frequency table data.
 #   - formula: A character string specifying the formula for the GLM.
 #   - cell_type: A character string specifying the cell type.
-# Returns: 
+# Returns:
 #   - A data frame containing the tidy results of the GLM with an additional column for the cell type.
 
 RunGlmFreq <- function(freq_table, formula, cell_type) {
@@ -183,7 +190,7 @@ RunLmeFreq <- function(freq_table, formula, celltype) {
 # Returns:
 #   - A list of pseudo SingleCellExperiment objects, with each object representing a cell type
 makePseudoSE <- function(countfile_table) {
-    require('SummarizedExperiment')
+    require("SummarizedExperiment")
     pb_se <- lapply(1:nrow(countfile_table), function(x) {
         # load data for one cell type
         pb_counts <- fread(file.path(data_path, countfile_table$counts_file[x])) %>% rename("V1" = "index")
@@ -204,25 +211,25 @@ makePseudoSE <- function(countfile_table) {
 }
 
 # RunDeseq function performs DESeq2 analysis on a list of SingleCellExperiment objects.
-# 
+#
 # Args:
 #   se_list: A list of SingleCellExperiment objects.
 #   formula: A formula specifying the design for DESeq2 analysis.
-# 
+#
 # Returns:
 #   A list of DESeqDataSet objects, each representing the DESeq2 analysis result for a SingleCellExperiment object in se_list.
 RunDeseq_list <- function(se_list, formula) {
     deseq_list <- lapply(seq_along(se_list), function(i) {
         require("DESeq2")
-        pb = se_list[[i]]
-        cell_type = names(se_list)[i]
+        pb <- se_list[[i]]
+        cell_type <- names(se_list)[i]
         message(paste("run Deseq2 for cell type", cell_type))
         colnames(pb) <- colData(pb)$sample.sampleKitGuid
         pb_des <- DESeqDataSet(pb, design = as.formula(formula))
         pb_des <- DESeq(pb_des)
         return(pb_des)
     })
-    names(deseq_list) = names(se_list)
+    names(deseq_list) <- names(se_list)
     return(deseq_list)
 }
 
@@ -299,11 +306,11 @@ addNormcountsList <- function(se_list, deseq_list, method = "vst",
             method = method, assay_name = assay_name
         )
         return(se_list[[i]])
-        })
-    names(se_norm_list) = names(se_list)
+    })
+    names(se_norm_list) <- names(se_list)
     return(se_norm_list)
 }
-                           
+
 ######## DEG analysis for linear mixed modeling ########
 #' DEseqNormCount Function
 #' This function takes a list of SingleCellExperiment objects and performs count normalization using the DESeq2 package.
@@ -316,9 +323,9 @@ addNormcountsList <- function(se_list, deseq_list, method = "vst",
 #' @import DESeq2
 #' @import parallel
 #' @export
-DEseqNormCount <- function(se_list, cores=1) {
+DEseqNormCount <- function(se_list, cores = 1) {
     require("DESeq2")
-    require('parallel')
+    require("parallel")
     deseq_list <- mclapply(1:length(se_list), function(i) {
         se <- se_list[[i]]
         cell_type <- names(se_list)[i]
@@ -337,8 +344,8 @@ DEseqNormCount <- function(se_list, cores=1) {
         vsd <- varianceStabilizingTransformation(pb_des, blind = TRUE)
         assay(se, "vst") <- assay(vsd)
         return(se)
-    }, mc.cores=cores)
-    names(deseq_list) = names(se_list)
+    }, mc.cores = cores)
+    names(deseq_list) <- names(se_list)
     return(deseq_list)
 }
 
@@ -398,8 +405,8 @@ lme4_model_gene_norm <- function(gene, pb_des, formula, celltype_col, assays = "
 #' @return A data frame containing the results of the lme4 model for each gene.
 #'
 #' @examples
-#' runLme4Celltype(pb_des, formula, assays = "vst", celltype_col = "pred_manual", cores = 62, output_path=output_path, proj_name=proj_name)
-runLme4Celltype <- function(pb_des, formula, assays = "vst", celltype_col = "pred_manual", cores = 62, output_path=output_path, proj_name=proj_name) {
+#' runLme4Celltype(pb_des, formula, assays = "vst", celltype_col = "pred_manual", cores = 62, output_path = output_path, proj_name = proj_name)
+runLme4Celltype <- function(pb_des, formula, assays = "vst", celltype_col = "pred_manual", cores = 62, output_path = output_path, proj_name = proj_name) {
     # load data
     cell_type <- colData(pb_des)[, celltype_col] %>% unique()
     message(paste("Run lme4 model deseq2 norm counts for cell type", cell_type))
@@ -441,11 +448,11 @@ runLme4Celltype <- function(pb_des, formula, assays = "vst", celltype_col = "pre
 #   p_col: The name of the column in the data frame that contains the p-values. Default is 'p.value'.
 # Returns:
 #   The input data frame with an additional column 'q_values' containing the calculated q-values.
-calQvalue <- function(x, p_col = 'p.value'){
-    require('qvalue')
+calQvalue <- function(x, p_col = "p.value") {
+    require("qvalue")
     pvalues <- x %>% pull(.data[[p_col]])
     qvalues <- qvalue::qvalue(pvalues)$qvalues
-    x <- x %>% mutate('q_values'=qvalues)
+    x <- x %>% mutate("q_values" = qvalues)
     return(x)
 }
 
@@ -472,15 +479,17 @@ calQvalue <- function(x, p_col = 'p.value'){
 #'
 #' @examples
 #' # Example usage of RunGSEACelltype function
-#' logfc_list <- data.frame(cell_type = c("A", "A", "B", "B"),
-#'                          logfc = c(1.2, 0.8, 1.5, 0.5),
-#'                          gene = c("gene1", "gene2", "gene3", "gene4"))
+#' logfc_list <- data.frame(
+#'     cell_type = c("A", "A", "B", "B"),
+#'     logfc = c(1.2, 0.8, 1.5, 0.5),
+#'     gene = c("gene1", "gene2", "gene3", "gene4")
+#' )
 #' result <- RunGSEACelltype(logfc_list)
 #' print(result)
 #'
 #' @export
 
-RunGSEACelltype <- function(logfc_list, gmx = NULL, ct.col = "cell_type", rank.col = "logfc", gene.col='gene',
+RunGSEACelltype <- function(logfc_list, gmx = NULL, ct.col = "cell_type", rank.col = "logfc", gene.col = "gene",
                             collapsePathways = FALSE,
                             ncores = 1) {
     require(fgsea)
@@ -611,20 +620,20 @@ RunGSEACelltype <- function(logfc_list, gmx = NULL, ct.col = "cell_type", rank.c
 #' normalized_data <- normalize_counts(aim3_pb_fl)
 #' @export
 normalize_counts <- function(aim3_pb_fl) {
-  aim3_pb_deseq <- lapply(aim3_pb_fl, function(x) {
-    colnames(x) <- colData(x)$sample.sampleKitGuid
-    colData(x)$subject.biologicalSex = factor(colData(x)$subject.biologicalSex)
-    if (length(unique(colData(x)$subject.biologicalSex)) >= 2) {
-      pb_des = DESeqDataSet(x, design = as.formula('~ subject.biologicalSex'))
-      vsd <- varianceStabilizingTransformation(pb_des, blind = FALSE)
-    } else {
-      pb_des = DESeqDataSet(x, design = as.formula('~ 1'))
-      vsd <- varianceStabilizingTransformation(pb_des, blind = TRUE)
-    }
-    assay(x, 'vst') <- assay(vsd)
-    return(x)
-  })
-  return(aim3_pb_deseq)
+    aim3_pb_deseq <- lapply(aim3_pb_fl, function(x) {
+        colnames(x) <- colData(x)$sample.sampleKitGuid
+        colData(x)$subject.biologicalSex <- factor(colData(x)$subject.biologicalSex)
+        if (length(unique(colData(x)$subject.biologicalSex)) >= 2) {
+            pb_des <- DESeqDataSet(x, design = as.formula("~ subject.biologicalSex"))
+            vsd <- varianceStabilizingTransformation(pb_des, blind = FALSE)
+        } else {
+            pb_des <- DESeqDataSet(x, design = as.formula("~ 1"))
+            vsd <- varianceStabilizingTransformation(pb_des, blind = TRUE)
+        }
+        assay(x, "vst") <- assay(vsd)
+        return(x)
+    })
+    return(aim3_pb_deseq)
 }
 
 
@@ -645,7 +654,7 @@ normalize_counts <- function(aim3_pb_fl) {
 #' deg_list <- data.frame(cell_type = c("T cell", "B cell"), gene = c("CD3D", "CD19"))
 #' SE_list <- list(T_cell = pb_sce_T_cell, B_cell = pb_sce_B_cell)
 #' gene_exprs <- GetExprsSE(deg_list, SE_list)
-#' 
+#'
 #' @import data.table
 #' @import dplyr
 #' @import SingleCellExperiment
@@ -695,8 +704,9 @@ GetExprsSE <- function(deg_list, SE_list, assay = "normalized_counts") {
 #'
 #' @examples
 #' PlotExprsLgPair(gex_lg, gex_conv, "T cell", "CD3D",
-#'                 subject_colors = cluster_colors, group_colors = ari_colors,
-#'                 fig_path = "/path/to/save/plot", proj_name = "Project1")
+#'     subject_colors = cluster_colors, group_colors = ari_colors,
+#'     fig_path = "/path/to/save/plot", proj_name = "Project1"
+#' )
 PlotExprsLgPair <- function(gex_lg, gex_conv, celltype_plot, gene_plot,
                             subject_colors = cluster_colors, group_colors = ari_colors, fig_path, proj_name) {
     library(ggplot2)
@@ -712,7 +722,7 @@ PlotExprsLgPair <- function(gex_lg, gex_conv, celltype_plot, gene_plot,
             color = "#8F7700FF", fill = "#8F7700FF",
             method = "loess"
         ) +
-        labs(title = paste(celltype_plot, gene_plot), x = "Days to Conversion", y =  "Normalized expression") +
+        labs(title = paste(celltype_plot, gene_plot), x = "Days to Conversion", y = "Normalized expression") +
         scale_color_subj() +
         theme_minimal() +
         theme(
@@ -728,9 +738,15 @@ PlotExprsLgPair <- function(gex_lg, gex_conv, celltype_plot, gene_plot,
     # only plot the paired samples
     gex_conv_fl <- gex_conv %>%
         filter(cell_type == celltype_plot & gene == gene_plot)
-    pair_nums = gex_conv_fl %>% group_by(subject.subjectGuid)%>%tally()
-    pair_subs = pair_nums %>% filter(n>=2) %>% pull(subject.subjectGuid) %>% unique()
-    p2 <- gex_conv_fl %>% filter(subject.subjectGuid%in%pair_subs) %>%
+    pair_nums <- gex_conv_fl %>%
+        group_by(subject.subjectGuid) %>%
+        tally()
+    pair_subs <- pair_nums %>%
+        filter(n >= 2) %>%
+        pull(subject.subjectGuid) %>%
+        unique()
+    p2 <- gex_conv_fl %>%
+        filter(subject.subjectGuid %in% pair_subs) %>%
         ggplot(aes(x = status, y = normalized_counts)) +
         geom_violin(aes(), alpha = 0.6) +
         geom_point(aes(group = subject.subjectGuid, color = subject.subjectGuid, shape = Sex)) +
@@ -752,10 +768,9 @@ PlotExprsLgPair <- function(gex_lg, gex_conv, celltype_plot, gene_plot,
         guides(color = FALSE, fill = FALSE)
 
     p_combine <- ggarrange(p1, p2, common.legend = TRUE)
-    ggsave(file.path(fig_path, paste0(proj_name, celltype_plot, 
-                                      "_", gene_plot, "_expression.pdf")), width = 6, height = 4)
+    ggsave(file.path(fig_path, paste0(
+        proj_name, celltype_plot,
+        "_", gene_plot, "_expression.pdf"
+    )), width = 6, height = 4)
     return(p_combine)
 }
-
- 
-                                        
