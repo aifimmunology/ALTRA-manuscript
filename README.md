@@ -1,2 +1,2 @@
-# ALTRA-Figures
-repository for codes to generate figures for ALTRA manuscript
+# ALTRA-manuscript
+repository for codes to perform analysis and generate figures for ALTRA manuscript
