@@ -5,23 +5,23 @@
 # It reads a CSV file containing subject colors and assigns them to the corresponding subject GUIDs.
 # The function `scale_color_subj` is defined to create a manual color scale using the subject colors.
 
-subj_colors_list <- read_csv(
-    file.path(
-        "/home/jupyter/github/ra-longitudinal/metadata",
-        "ALTRA_longtidunal_subject_colors.csv"
-    ),
-    show_col_types = FALSE
-)
-subject_colors <- c(subj_colors_list$subj_colors)
-names(subject_colors) <- subj_colors_list$subject.subjectGuid
+# subj_colors_list <- read_csv(
+#     file.path(
+#         '/home/workspace/github/ALTRA-manuscript/Analysis/scRNA',
+#         "ALTRA_longtidunal_subject_colors.csv"
+#     ),
+#     show_col_types = FALSE
+# )
+# subject_colors <- c(subj_colors_list$subj_colors)
+# names(subject_colors) <- subj_colors_list$subject.subjectGuid
 
-scale_color_subj <- function(colors = subject_colors, ...) {
-    ggplot2:::manual_scale(
-        "color",
-        values = colors,
-        ...
-    )
-}
+# scale_color_subj <- function(colors = subject_colors, ...) {
+#     ggplot2:::manual_scale(
+#         "color",
+#         values = colors,
+#         ...
+#     )
+# }
 
 ######## DA analysis  ########
 
@@ -723,7 +723,7 @@ PlotExprsLgPair <- function(gex_lg, gex_conv, celltype_plot, gene_plot,
             method = "loess"
         ) +
         labs(title = paste(celltype_plot, gene_plot), x = "Days to Conversion", y = "Normalized expression") +
-        scale_color_subj() +
+        # scale_color_subj() +
         theme_minimal() +
         theme(
             text = element_text(size = 10, face = "bold"),
@@ -752,7 +752,7 @@ PlotExprsLgPair <- function(gex_lg, gex_conv, celltype_plot, gene_plot,
         geom_point(aes(group = subject.subjectGuid, color = subject.subjectGuid, shape = Sex)) +
         geom_line(aes(group = subject.subjectGuid, color = subject.subjectGuid)) +
         labs(title = "", x = "", y = "") +
-        scale_color_subj() +
+        # scale_color_subj() +
         scale_fill_manual(values = group_colors[2:3]) +
         theme_minimal() +
         theme(
