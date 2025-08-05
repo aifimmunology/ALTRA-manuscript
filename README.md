@@ -36,6 +36,16 @@ This repository contains Jupyter notebooks and scripts for the ALTRA manuscript 
 - *Celltype labelled single cell level UMPAs*
 - **Figure1/Figure_S3D.ipynb**
 - *Frequency changes overtime between CON1/HC1 and ARI*
+- **Figure1/Figure_S1D.ipynb**
+- *OLINK: Differentially Aboundant Proteins (DAPs) in CON1/HC1 and ARI at Basline*
+- **Figure1/Figure_1C_S2DEF.ipynb**
+- *OLINK: Clustering for disease status*
+- **Figure1/Figure_S1E.ipynb**
+- *OLINK: Pathway Enrichment results for ARI and CON1/HC1 at baseline*
+- **Figure1/Figure_S1F.ipynb**
+- *OLINK: Ethinicity comparion for ARI and CON1/HC1 at baseline*
+- **Figure1/Figure_S2ABC.ipynb**
+- *OLINK: Baseline cross-sectional comparison for ARI,CON1/HC1/ERA/RA converters at baseline*
 
 #### Figure2
 - **Figure2/Figure_2B.ipynb**
