@@ -116,7 +116,7 @@ This repository contains Jupyter notebooks and scripts for the ALTRA manuscript 
 - *DEGs in CD4 Naive T cells*
 - **Figure5/Figure_5G.ipynb**
 - *Gene module score plot for CD4 Naive T cells*
-- **Figure5/Figure_S11_ABEF.ipynb**
+- **Figure5/Figure_S11_EF.ipynb**
 - *Frequency for Core naive CD4 Tcells based on key DEGs*
 - **Figure5/Figure_S11D.ipynb**
 - *DEGs CD8 Naive T cells*
@@ -134,14 +134,14 @@ This repository contains Jupyter notebooks and scripts for the ALTRA manuscript 
 - *ATAC: Differentially Accessable Peaks in CD4 Naive T cells*
 
 #### Figure7_S13_Treatment_effect
-- **Figure7_S13_Treatment_effect/FigS13_AB.ipynb**
-- *DEGs results for Abatacept Responders and Non-responders*
 - **Figure7_S13_Treatment_effect/Figure_7BD_ABT_treatment.ipynb**
-- *Abatacept treatment plots*
+- *Abatacept responders and Non-responders analysis plots*
 - **Figure7_S13_Treatment_effect/Figure_7CE_TNFi_Treatment.ipynb**
 - *Abatacept TNFi treatment plots*
 - **Figure7_S13_Treatment_effect/Figure_7H.ipynb**
-- * Gene signature validation for Abatacept treatment
+- *Gene signature validation for Abatacept treatment*
+- **Figure7_S13_Treatment_effect/Figure_S13_AB.ipynb**
+- *DEGs in Abatacept Responders and Non-responders*
 
 #### FigureS15
 - **FigureS15/FigS15_A_B_C.ipynb**
