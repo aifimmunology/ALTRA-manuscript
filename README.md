@@ -7,13 +7,15 @@ This repository contains Jupyter notebooks and scripts for the ALTRA manuscript 
 
 - **Flow_Cytometry**
 - *Data cleaning, pre-processing ,Object creation and downstream analysis for Flow Cytometry data*
+- **Intercellular_Bcell_Analysis**
+- *Initial B cell data processing Metaclustering, isotype labeling and cleaning of processed B cell cytometry data*
+- **OLINK_analysis**
+- *Data cleaning, pre-processing and clustering analysis for Proteomics/OLINK data*
 - **TEA-Seq_analysis**
 - *Data cleaning, pre-processing ,Object creation and downstream analysis including MOFA and ACTAC seq for TEA-Seq data*
 - **scRNA**
 - *Data cleaning, pre-processing ,Object creation and downstream analysis including  Differential Abundance/Frequency , NMF analysis, Spectra analysis,Tfh17 validation analysis for scRNA data*
 - NMF Analysis set up : https://github.com/yyoshiaki/NMFprojection/ 
-- **Intercellular B cell Analysis**
--*Initial B cell data processing Metaclustering, isotype labeling and cleaning of processed B cell cytometry data*
 
 ### `Figures` Folder
 
@@ -80,7 +82,7 @@ This repository contains Jupyter notebooks and scripts for the ALTRA manuscript 
 - **Figure3/Figure_S4_G.ipynb**
 - *Expession of Isotypes across B cells*
 - **Figure3/Figure_S6_H.ipynb**
-- * Key marker gene expression across B cells
+- *Key marker gene expression across B cells*
 - **Figure3/Figure_S6K.ipynb**
 - *Flow cytometry: B cell Clustering*
 #### Figure3_IC
