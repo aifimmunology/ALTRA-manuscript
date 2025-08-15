@@ -128,6 +128,8 @@ This repository contains Jupyter notebooks and scripts for the ALTRA manuscript 
 - *DEGs in CD4 Naive T cells*
 - **Figure5/Figure_5G.ipynb**
 - *Gene module score plot for CD4 Naive T cells*
+- **Figure5/Figure_5H_S11H.ipynb**
+- *GSEA plots for CD4 and CD8 T cells*
 - **Figure5/Figure_S11_EF.ipynb**
 - *Frequency for Core naive CD4 Tcells based on key DEGs*
 - **Figure5/Figure_S11D.ipynb**
