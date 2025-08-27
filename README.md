@@ -12,7 +12,7 @@ This repository contains Jupyter notebooks and scripts for the ALTRA manuscript 
 - **OLINK_analysis**
 - *Data cleaning, pre-processing and clustering analysis for Proteomics/OLINK data*
 - **TEA-Seq_analysis**
-- *Data cleaning, pre-processing ,Object creation and downstream analysis including MOFA and ACTAC seq for TEA-Seq data*
+- *Data cleaning, pre-processing ,Object creation and downstream analysis including MOFA and ATAC seq for TEA-Seq data*
 - **scRNA**
 - *Data cleaning, pre-processing ,Object creation and downstream analysis including  Differential Abundance/Frequency , NMF analysis, Spectra analysis,Tfh17 validation analysis for scRNA data*
 - NMF Analysis set up : https://github.com/yyoshiaki/NMFprojection/ 
@@ -41,7 +41,7 @@ This repository contains Jupyter notebooks and scripts for the ALTRA manuscript 
 - **Figure1/Figure_S3D.ipynb**
 - *Frequency changes overtime between CON1/HC1 and ARI*
 - **Figure1/Figure_S1D.ipynb**
-- *OLINK: Differentially Aboundant Proteins (DAPs) in CON1/HC1 and ARI at Basline*
+- *OLINK: Differentially Aboundant Proteins (DAPs) in CON1/HC1 and ARI at baseline*
 - **Figure1/Figure_1C_S2DEF.ipynb**
 - *OLINK: Clustering for disease status*
 - **Figure1/Figure_S1E.ipynb**
@@ -49,7 +49,7 @@ This repository contains Jupyter notebooks and scripts for the ALTRA manuscript 
 - **Figure1/Figure_S1F.ipynb**
 - *OLINK: Ethinicity comparion for ARI and CON1/HC1 at baseline*
 - **Figure1/Figure_S2ABC.ipynb**
-- *OLINK: Baseline cross-sectional comparison for ARI,CON1/HC1/ERA/RA converters at baseline*
+- *OLINK: Baseline cross-sectional comparison for ARI,CON1/HC1/ERA/RA Converters at baseline*
 
 #### Figure2
 - **Figure2/Figure_2B.ipynb**
