@@ -24,6 +24,10 @@ This repository contains Jupyter notebooks and scripts for the ALTRA manuscript 
 - *Frequency changes in CM CD4 T cells and Core CD14 Monocytes between CON1/HC1 and ARI*
 - **Figure1/Figure_1B.ipynb**
 - *Autoantibody levels across disease status*
+- **Figure1/Figure_1D.ipynb(need Notebook)**
+- *NPX expression across disease status*
+- **Figure1/Figure_1E.ipynb**
+- *Plasma concentration across protein cluster (C1 and C6)*
 - **Figure1/Figure_1F.ipynb**
 - *Differentially Expressed Genes between CON1/HC1 and ARI*
 - **Figure1/Figure_S1B.ipynb**
@@ -56,6 +60,10 @@ This repository contains Jupyter notebooks and scripts for the ALTRA manuscript 
 - *DEGs for Longitudinal RA Converters*
 - **Figure2/Figure_2F_S5G.ipynb**
 - *paired Pseudobulk DEG analysis results*
+- **Figure2/Figure_2G.ipynb(need notbook)**
+- *Mean gene expression of key marker genes in Monocytes*
+- **Figure2/Figure_2H.ipynb(need notbook)**
+- *RNA score acrossMonocytes*
 - **Figure2/Figure_2I.ipynb**
 - *IL1B+ monocyte frequency pre and post conversion in RA converters*
 - **Figure2/Figure_S4ABE.ipynb**
@@ -75,8 +83,9 @@ This repository contains Jupyter notebooks and scripts for the ALTRA manuscript 
 - *DEGs in Monocytes*
 
 #### Figure3
-- **Figure3/Figure_3B.ipynb**
+- **Figure3/Figure_3AB_S6C.ipynb**
 - *DEGs in Effector B cells*
+- *Key Isotype expression in Effector B cells*
 - **Figure3/Figure_3C.ipynb**
 - *Proportion of Isotypes in Effector B cells*
 - **Figure3/Figure_3F.ipynb**
@@ -85,8 +94,6 @@ This repository contains Jupyter notebooks and scripts for the ALTRA manuscript 
 - *Key marker gene expression between HC2 and ARI*
 - **Figure3/Figure_S6A.ipynb**
 - *Frequency changes in longitunal RA converters in Naive B cells*
-- **Figure3/Figure_S6C.ipynb**
-- *Key Isotype expression in Effector B cells*
 - **Figure3/Figure_S6E.ipynb**
 - *Frequency changes in HC2 in Effector B cells*
 - **Figure3/Figure_S4_G.ipynb**
@@ -110,7 +117,7 @@ This repository contains Jupyter notebooks and scripts for the ALTRA manuscript 
 - *Tfh/Tph gene score across clusters*
 - **Figure4/Figure_4H.ipynb**
 - *DEGs for Non-naive CD4 T cells at single cell level*
-- **Figure4/Figure_4_DFGH_S6_S7.ipynb**
+- **Figure4/Figure_4_DFGH_S7CD_S8AB.ipynb**
 - *Non-Naive CD4 T cells Plots- NMF projection*
 - **Figure4/Figure_S8CDEFG.ipynb**
 - *Tfh17 signature in TEA-Seq data*
@@ -130,7 +137,7 @@ This repository contains Jupyter notebooks and scripts for the ALTRA manuscript 
 - *Gene module score plot for CD4 Naive T cells*
 - **Figure5/Figure_5H_S11H.ipynb**
 - *GSEA plots for CD4 and CD8 T cells*
-- **Figure5/Figure_S11_EF.ipynb**
+- **Figure5/Figure_S11_FG.ipynb**
 - *Frequency for Core naive CD4 Tcells based on key DEGs*
 - **Figure5/Figure_S11D.ipynb**
 - *DEGs CD8 Naive T cells*
@@ -152,6 +159,9 @@ This repository contains Jupyter notebooks and scripts for the ALTRA manuscript 
 - *Abatacept responders and Non-responders analysis plots*
 - **Figure7_S13_Treatment_effect/Figure_7CE_TNFi_Treatment.ipynb**
 - *Abatacept TNFi treatment plots*
+-**Figure7_S13_Treatment_effect/Figure_7FG(need notebook)**
+- *NABP1 expression in RA logitudinal converters*
+- *NABP1 expression in ABT responders*
 - **Figure7_S13_Treatment_effect/Figure_7H.ipynb**
 - *Gene signature validation for Abatacept treatment*
 - **Figure7_S13_Treatment_effect/Figure_S13_AB.ipynb**
