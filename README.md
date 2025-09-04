@@ -24,8 +24,6 @@ This repository contains Jupyter notebooks and scripts for the ALTRA manuscript 
 - *Frequency changes in CM CD4 T cells and Core CD14 Monocytes between CON1/HC1 and ARI*
 - **Figure1/Figure_1B.ipynb**
 - *Autoantibody levels across disease status*
-- **Figure1/Figure_1D.ipynb**
-- *NPX expression across disease status*
 - **Figure1/Figure_1E.ipynb**
 - *Plasma concentration across protein cluster (C1 and C6)*
 - **Figure1/Figure_1F.ipynb**
@@ -42,7 +40,7 @@ This repository contains Jupyter notebooks and scripts for the ALTRA manuscript 
 - *Frequency changes overtime between CON1/HC1 and ARI*
 - **Figure1/Figure_S1D.ipynb**
 - *OLINK: Differentially Aboundant Proteins (DAPs) in CON1/HC1 and ARI at baseline*
-- **Figure1/Figure_1C_S2DEF.ipynb**
+- **Figure1/Figure_1CD_S2DEF.ipynb**
 - *OLINK: Clustering for disease status*
 - **Figure1/Figure_S1E.ipynb**
 - *OLINK: Pathway Enrichment results for ARI and CON1/HC1 at baseline*
