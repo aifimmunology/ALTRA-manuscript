@@ -175,6 +175,6 @@ This repository contains Jupyter notebooks and scripts for the ALTRA manuscript 
 
 ## Usage
 
-Clone the repository and run the notebooks in order. See `environment.yml` for dependencies.
+Clone the repository and run the notebooks in order. See yaml files under _Environment_ folder for dependencies.
 
 For questions, contact the repository maintainer.
