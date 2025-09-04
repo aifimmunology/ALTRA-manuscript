@@ -24,7 +24,7 @@ This repository contains Jupyter notebooks and scripts for the ALTRA manuscript 
 - *Frequency changes in CM CD4 T cells and Core CD14 Monocytes between CON1/HC1 and ARI*
 - **Figure1/Figure_1B.ipynb**
 - *Autoantibody levels across disease status*
-- **Figure1/Figure_1D.ipynb(need Notebook)**
+- **Figure1/Figure_1D.ipynb**
 - *NPX expression across disease status*
 - **Figure1/Figure_1E.ipynb**
 - *Plasma concentration across protein cluster (C1 and C6)*
@@ -60,10 +60,10 @@ This repository contains Jupyter notebooks and scripts for the ALTRA manuscript 
 - *DEGs for Longitudinal RA Converters*
 - **Figure2/Figure_2F_S5G.ipynb**
 - *paired Pseudobulk DEG analysis results*
-- **Figure2/Figure_2G.ipynb(need notbook)**
+- **Figure2/Figure_2G.ipynb**
 - *Mean gene expression of key marker genes in Monocytes*
-- **Figure2/Figure_2H.ipynb(need notbook)**
-- *RNA score acrossMonocytes*
+- **Figure2/Figure_2H.ipynb**
+- *RNA score across Monocytes*
 - **Figure2/Figure_2I.ipynb**
 - *IL1B+ monocyte frequency pre and post conversion in RA converters*
 - **Figure2/Figure_S4ABE.ipynb**
@@ -88,20 +88,28 @@ This repository contains Jupyter notebooks and scripts for the ALTRA manuscript 
 - *Key Isotype expression in Effector B cells*
 - **Figure3/Figure_3C.ipynb**
 - *Proportion of Isotypes in Effector B cells*
-- **Figure3/Figure_3F.ipynb**
+- **Figure3/Figure_3DG_S6FL.ipynb**
+- *B cells gene expression and pathway analysis plots*
+- **Figure3/Figure_3E.ipynb(notebook needed)**
+- *GLT for Core Naive B cells*
+- **Figure3/Figure_3F_S6J.ipynb**
 - *Flow Cytometry: Frequency changes in longitunal RA converters in Naive B cells*
-- **Figure3/Figure_3I.ipynb**
+- **Figure3/Figure_3I.ipynb(need notebook)**
 - *Key marker gene expression between HC2 and ARI*
-- **Figure3/Figure_S6A.ipynb**
+- **Figure3/Figure_S6A_E.ipynb**
 - *Frequency changes in longitunal RA converters in Naive B cells*
-- **Figure3/Figure_S6E.ipynb**
-- *Frequency changes in HC2 in Effector B cells*
-- **Figure3/Figure_S4_G.ipynb**
+- **Figure3/Figure_S6F.ipynb**
+- *IGHM RNA expression HC1 vs ARI*
+- **Figure3/Figure_S6_G.ipynb**
 - *Expession of Isotypes across B cells*
 - **Figure3/Figure_S6_H.ipynb**
 - *Key marker gene expression across B cells*
+- **Figure3/Figure_S6_I.ipynb**
+- *IGHG GLT Expression*
 - **Figure3/Figure_S6K.ipynb**
 - *Flow cytometry: B cell Clustering*
+- **Figure3/Figure_S6L.ipynb**
+- *PAX5 RNA expression HC1 vs ARI*
 #### Figure3_IC
 - **Figure_3_IC/IC_flow_bcell_data_analysis.R**
 - *Intracellular flow cytometry: Percentage cytokine-positive cells among naive B cells of ARI and HC2/CON2*
@@ -117,18 +125,28 @@ This repository contains Jupyter notebooks and scripts for the ALTRA manuscript 
 - *Tfh/Tph gene score across clusters*
 - **Figure4/Figure_4H.ipynb**
 - *DEGs for Non-naive CD4 T cells at single cell level*
-- **Figure4/Figure_4_DFGH_S7CD_S8AB.ipynb**
+- **Figure4/Figure_4_DFG_S7CD_S8AB.ipynb**
 - *Non-Naive CD4 T cells Plots- NMF projection*
+- **Figure4/Figure_S7A.ipynb**
+- *Key gene expression in RA longitudinal converters*
+- **Figure4/Figure_S7F1.ipynb**
+- *Frequency changes in RA lognitudinal Converters in Memory CD4 T cells*
+- **Figure4/Figure_S7F2.ipynb**
+- *Frequency changes in RA lognitudinal Converters in Total CD4 T cells*
 - **Figure4/Figure_S8CDEFG.ipynb**
 - *Tfh17 signature in TEA-Seq data*
 - **Figure4/Figure_S8H.ipynb**
 - *Mean gene expression of DEGs in Non-naive CD4 T cells*
 - **Figure4/Figure_S9BCD.ipynb**
 - *Flow Cytometry : tfh17 clustering*
+- **Figure4/Figure_S10AC.ipynb**
+- *Ligand-receptor interactions from CD4mem to Beff cells*
+- **Figure4/Figure_S10B.ipynb**
+- *CD4mem Ligand Gene expression*
+- **Figure4/Figure_S10D.ipynb**
+- *Beff cells Ligand Gene expression*
 
 #### Figure5
-- **Figure5/Figure_5ABCD.ipynb**
-- *TEA-Seq: MOFA analysis related figures for CD4 Naive T cells*
 - **Figure5/Figure_5BCDE.ipynb**
 - *TEA-Seq: MOFA model results for CD4 Naive T cells*
 - **Figure5/Figure_5F.ipynb**
@@ -155,12 +173,11 @@ This repository contains Jupyter notebooks and scripts for the ALTRA manuscript 
 - *ATAC: Differentially Accessable Peaks in CD4 Naive T cells*
 
 #### Figure7_S13_Treatment_effect
-- **Figure7_S13_Treatment_effect/Figure_7BD_ABT_treatment.ipynb**
+- **Figure7_S13_Treatment_effect/Figure_7BDG_ABT_treatment.ipynb**
 - *Abatacept responders and Non-responders analysis plots*
 - **Figure7_S13_Treatment_effect/Figure_7CE_TNFi_Treatment.ipynb**
 - *Abatacept TNFi treatment plots*
--**Figure7_S13_Treatment_effect/Figure_7FG(need notebook)**
-- *NABP1 expression in RA logitudinal converters*
+- **Figure7_S13_Treatment_effect/Figure_7F**
 - *NABP1 expression in ABT responders*
 - **Figure7_S13_Treatment_effect/Figure_7H.ipynb**
 - *Gene signature validation for Abatacept treatment*
