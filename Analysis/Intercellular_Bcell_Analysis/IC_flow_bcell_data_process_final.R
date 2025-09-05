@@ -1,12 +1,12 @@
 ####################################################################################################################
 #
-# Script: IC_flow_bcell_data_process.R
+# Script: IC_flow_bcell_data_process_final.R
 # Project: He, Glass et al pre-clinical RA study 
 # Subproject: Peripheral B cell intracellular flow cytometry data analysis
 # Author: Marla Glass
-# Date: 07-31-25
+# Date: 09-04-2025
 #
-# Process fcs files for analysis of ARI (ACPA+) and HC2/CON (ACPA- control) B cell flow cytometry data 
+# Process fcs files for analysis of ARI (ACPA+ at-risk individuals) and HC (ACPA- control) B cell flow cytometry data 
 #   Input:
 #     FCS files gated as viable B Cells
 #     CSV file with metadata for fcs files, includes condition and donor/subject ids
@@ -19,8 +19,8 @@
 #
 # Data processing in R:
 #   Download and annotate live B cells with condition 
-#   asinh transform by experiment
-#   Scale to 99.9th percentile by experiment
+#   asinh transform by batch
+#   Scale to 99.9th percentile by batch
 # 
 #######################################################################################################################
 
@@ -39,18 +39,23 @@ require(listr)
 fcs.path <- "~/data_analysis/fcs/"
 table.path <- "~/data_analysis/tables/"
 
-factors <- c("cell_type", "condition", "donor", "time", "sample_status", "expt")
+factors <- c("cell_type", "condition", "donor", "time", "sample_status", "batch", "status")
 
 dump <- c("FSC-A", "FSC-H", "FSC-W", "SSC-A", "SSC-B-A", "SSC-B-H", "SSC-B-W", "SSC-H", "SSC-W", 
           "Time", "AF-A")
 
 conds <- c("CpG_CD40_stimulated", "unstimulated")
-donors <- c("ARI_1" , "ARI_2" , "ARI_3" , "ARI_4" , "ARI_5" , "ARI_6" , "ARI_7" , "ARI_8" , "ARI_9" , "ARI_10" , "ARI_11" , "ARI_12" , 
-            "ARI_13" , "ARI_14" , "ARI_15" , "ARI_16" , "ARI_17" , "ARI_18" , "ARI_19" , "ARI_20" , "ARI_21" , "ARI_22" , "ARI_23" , "ARI_24" , 
-            "CON_1" , "CON_2" , "CON_3" , "CON_4" , "CON_5" , "CON_6" , "CON_7" , "CON_8" , "CON_9" , "CON_10" , "CON_11" , "CON_12" , 
-            "CON_13" , "CON_14" , "CON_15" , "CON_16" , "CON_17" , "CON_18" , "CON_19" , "CON_20" , "CON_21")
+donors <- c("ARI_1" , "ARI_2" , "ARI_3" , "ARI_4" , "ARI_5" , "ARI_6" , 
+            "ARI_7" , "ARI_8" , "ARI_9" , "ARI_10" , "ARI_11" , "ARI_12" , 
+            "ARI_13" , "ARI_14" , "ARI_15" , "ARI_16" , "ARI_17" , 
+            "HC_1" , "HC_2" , "HC_3" , "HC_4" , "HC_5" , "HC_6" , 
+            "HC_7" , "HC_8" , "HC_9" , "HC_10" , "HC_11" , "HC_12" , 
+            "HC_13", "D_1", "D_2" , "D_3" , "D_4" , "D_5" , "D_6" , 
+            "D_7" , "D_8" , "D_9" , "D_10" , "D_11" , "D_12" , 
+            "D_13" , "D_14" , "D_15")
 sample.statuses <- c("experimental")
-expts <- c("386", "490", "537")
+batches <- c("1", "2", "3")
+clin.status <- c("at-risk", "control")
 
 intracellular <- c("TNFa", "IL_6", "IL_10", "RANKL")
 intra.factors <- c("IL_10_pos", "IL_6_pos", "TNFa_pos", "RANKL_pos")
@@ -88,7 +93,7 @@ readFiles <- function(p) {
   return(frames)
 }
 
-combineFiles386 <- function(frames, fd, du=paste(dump, "CD14"), fa=factors) {
+combineFiles1 <- function(frames, fd, du=paste(dump, "CD14"), fa=factors) {
   # Combines a list of data.tables into a single data.table with factor columns added
   # Inputs:
   #   frames - a list of data.tables
@@ -114,7 +119,8 @@ combineFiles386 <- function(frames, fd, du=paste(dump, "CD14"), fa=factors) {
                cell_type=factor(cell_type), 
                condition=factor(condition, levels=conds), 
                time=factor(time), 
-               expt=factor(expt),
+               batch=factor(batch),
+               status=factor(status, levels=clin.status),
                sample_status=factor(sample_status, levels=sample.statuses))] %>%
     setnames(., "IL-6", "IL_6") %>%
     setnames(., "IL-10", "IL_10") %>%
@@ -123,7 +129,7 @@ combineFiles386 <- function(frames, fd, du=paste(dump, "CD14"), fa=factors) {
   return(frame)
 }
 
-combineFiles490a537 <- function(frames, fd, du=paste(dump, "CD307d"), fa=factors) {
+combineFiles2a3 <- function(frames, fd, du=paste(dump, "CD307d"), fa=factors) {
   # Combines a list of data.tables into a single data.table with factor columns added
   # Inputs:
   #   frames - a list of data.tables
@@ -149,7 +155,8 @@ combineFiles490a537 <- function(frames, fd, du=paste(dump, "CD307d"), fa=factors
                cell_type=factor(cell_type), 
                condition=factor(condition, levels=conds), 
                time=factor(time), 
-               expt=factor(expt),
+               batch=factor(batch),
+               status=factor(status, levels=clin.status),
                sample_status=factor(sample_status, levels=sample.statuses))] %>%
     setnames(., "IL6", "IL_6") %>%
     setnames(., "IL10", "IL_10") %>%
@@ -197,69 +204,73 @@ scaleData <- function(dt, fa=factors, quant.lo=0.001, quant.hi=0.999) {
   return(dt)
 }
 
-exptDataMerge <- function() {
+dataMerge <- function() {
   # Merges flow datasets 
   # Outputs: merged data table
   
   print("merging experiment data tables")
   
-  dat.386 <- as.data.table(dat.386) %>%
+  dat.1 <- as.data.table(dat.1) %>%
     .[, CD14:=NULL] %>%
     .[, Time:=NULL] %>%
     .[, `:=`(donor=factor(donor),
              cell_type=factor(cell_type), 
              condition=factor(condition, levels=conds), 
              time=factor(time), 
-             expt=factor(expt),
+             batch=factor(batch),
+             status=factor(status, levels=clin.status),
              sample_status=factor(sample_status))]
-  dat.490 <- as.data.table(dat.490) %>%
+  dat.2 <- as.data.table(dat.2) %>%
     .[, CD307d:=NULL] %>%
     .[, Time:=NULL] %>%
     .[, `:=`(donor=factor(donor),
              cell_type=factor(cell_type), 
              condition=factor(condition, levels=conds), 
              time=factor(time), 
-             expt=factor(expt),
+             batch=factor(batch),
+             status=factor(status, levels=clin.status),
              sample_status=factor(sample_status))]
-  dat.537 <- as.data.table(dat.537) %>%
+  dat.3 <- as.data.table(dat.3) %>%
     .[, CD307d:=NULL] %>%
     .[, Time:=NULL] %>%
     .[, `:=`(donor=factor(donor),
              cell_type=factor(cell_type), 
              condition=factor(condition, levels=conds), 
              time=factor(time), 
-             expt=factor(expt),
+             batch=factor(batch),
+             status=factor(status, levels=clin.status),
              sample_status=factor(sample_status))]
   
-temp <- merge(dat.386, dat.490, all=T) %>%
-  as.data.table() 
-dt <- merge(temp, dat.537, all=T) %>%
-  as.data.table() %>%
-  .[, `:=`(donor=factor(donor, levels=donors),
-           cell_type=factor(cell_type), 
-           condition=factor(condition, levels=conds), 
-           time=factor(time), 
-           expt=factor(expt, levels=expts),
-           sample_status=factor(sample_status, levels=sample.statuses))]
-
-return(dt)
+  temp <- merge(dat.1, dat.2, all=T) %>%
+    as.data.table() 
+  dt <- merge(temp, dat.3, all=T) %>%
+    as.data.table() %>%
+    .[, `:=`(donor=factor(donor, levels=donors),
+             cell_type=factor(cell_type), 
+             condition=factor(condition, levels=conds), 
+             time=factor(time), 
+             batch=factor(batch, levels=batches),
+             status=factor(status, levels=clin.status),
+             sample_status=factor(sample_status, levels=sample.statuses))]
+  
+  return(dt)
 }
 
 ###### MAIN ######
 
-dat.386 <- readFiles(p=paste0(fcs.path, "exp_00386/")) %>%
-  combineFiles386(fd=paste0(table.path, "ARI_HC_EXP_00386_Bcell_process_data_2024.csv")) %>%
+dat.1 <- readFiles(p=paste0(fcs.path, "batch1/")) %>%
+  combineFiles1(fd=paste0(table.path, "ARI_HC_Bcell_process_data_batch1.csv")) %>%
   asinTransform() %>%
   scaleData()
-dat.490 <- readFiles(p=paste0(fcs.path, "exp_00490/")) %>%
-  combineFiles490a537(fd=paste0(table.path, "ARI_HC_EXP_00490_Bcell_process_data_2024.csv")) %>%
+dat.2 <- readFiles(p=paste0(fcs.path, "batch2/")) %>%
+  combineFiles2a3(fd=paste0(table.path, "ARI_HC_Bcell_process_data_batch2.csv")) %>%
   asinTransform() %>%
   scaleData() 
-dat.537 <- readFiles(p=paste0(fcs.path, "exp_00537/")) %>%
-  combineFiles490a537(fd=paste0(table.path, "ARI_HC_EXP_00537_Bcell_process_data_2024.csv")) %>%
+dat.3 <- readFiles(p=paste0(fcs.path, "batch3/")) %>%
+  combineFiles2a3(fd=paste0(table.path, "ARI_HC_Bcell_process_data_batch3.csv")) %>%
   asinTransform() %>%
   scaleData() 
-dat <- exptDataMerge()
+dat <- dataMerge()
 dat[, .N, by=donor]
 
 #save processed single-cell data file
@@ -267,4 +278,3 @@ write_csv(dat, paste0(table.path, "bcell_processed_flow_data.csv"))
 
 #optional check of data file
 #check.dat <- fread(paste0(table.path, "bcell_processed_flow_data.csv"))
-

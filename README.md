@@ -88,12 +88,10 @@ This repository contains Jupyter notebooks and scripts for the ALTRA manuscript 
 - *Proportion of Isotypes in Effector B cells*
 - **Figure3/Figure_3DG_S6FL.ipynb**
 - *B cells gene expression and pathway analysis plots*
-- **Figure3/Figure_3E.ipynb(notebook needed)**
+- **Figure3/Figure_3E.ipynb**
 - *GLT for Core Naive B cells*
 - **Figure3/Figure_3F_S6J.ipynb**
 - *Flow Cytometry: Frequency changes in longitunal RA converters in Naive B cells*
-- **Figure3/Figure_3I.ipynb(need notebook)**
-- *Key marker gene expression between HC2 and ARI*
 - **Figure3/Figure_S6A_E.ipynb**
 - *Frequency changes in longitunal RA converters in Naive B cells*
 - **Figure3/Figure_S6F.ipynb**
@@ -109,7 +107,7 @@ This repository contains Jupyter notebooks and scripts for the ALTRA manuscript 
 - **Figure3/Figure_S6L.ipynb**
 - *PAX5 RNA expression HC1 vs ARI*
 #### Figure3_IC
-- **Figure_3_IC/IC_flow_bcell_data_analysis.R**
+- **Figure_3_IC/IC_flow_bcell_data_analysis.R(Figure_3I)**
 - *Intracellular flow cytometry: Percentage cytokine-positive cells among naive B cells of ARI and HC2/CON2*
   
 #### Figure4
