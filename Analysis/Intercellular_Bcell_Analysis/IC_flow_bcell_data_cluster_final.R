@@ -1,19 +1,17 @@
 ##############################################################################
 #
-# Script: IC_flow_bcell_data_cluster.R
+# Script: IC_flow_bcell_data_cluster_final.R
 # Project: He, Glass et al pre-clinical RA study 
 # Subproject: Peripheral B cell intracellular flow cytometry data analysis
 # Author: Marla Glass
-# Date: 07-31-25
+# Date: 09-04-2025
 #
 # This program takes in a CSV file of processed viable B cell flow cytometry data from IC_flow_bcell_data_process.R
 # Processed flow cytometry data has been arsinh transformed and scaled 
 #
 # Analyses:
 # 1) Label B cells isotypes and set cytokine and RANKL positivity cutoffs, 
-# 2) identify and remove donor/subject data with less than 300 B cells total,
-# 3) remove data for 1 HC2 (control) donor with elevated CCP3 level (value >10),
-# 4) generate clusters and assign metaclusters
+# 2) generate clusters and assign metaclusters
 #
 # Output: CSV files of cytometry data with B cell metaclusters and BCR isotypes assigned  
 #
@@ -36,30 +34,31 @@ require(calecopal)
 # *update these file paths as needed*
 images.path <- "~/data_analysis/images/"
 processimages.path <- "~/data_analysis/images/process/" 
-clusterimages.path <- "~/data_analysis/images/cluster/" 
 dat.path <- "~/data_analysis/tables/bcell_processed_flow_data.csv"
-meta.dat.path <- "~/data_analysis/tables/ARI_HC_subject_metadata.csv"
 path <- "~/data_analysis/tables/"
 
 dump <- c("FSC-A", "FSC-H", "FSC-W", "SSC-A", "SSC-B-A", "SSC-B-H", "SSC-H", "SSC-W")
 
-factors <- c("cell_type", "condition", "donor", "time", "sample_status", "isotype", "cluster", "meta", "expt", "isotype")
+factors <- c("cell_type", "condition", "donor", "time", "sample_status", "isotype", "cluster", "meta", "batch", "status", "isotype")
 
 conds <- c("CpG_CD40_stimulated", "unstimulated")
 
-orig.donors <- c("ARI_1" , "ARI_2" , "ARI_3" , "ARI_4" , "ARI_5" , "ARI_6" , "ARI_7" , "ARI_8" , "ARI_9" , "ARI_10" , "ARI_11" , "ARI_12" , 
-            "ARI_13" , "ARI_14" , "ARI_15" , "ARI_16" , "ARI_17" , "ARI_18" , "ARI_19" , "ARI_20" , "ARI_21" , "ARI_22" , "ARI_23" , "ARI_24" , 
-            "CON_1" , "CON_2" , "CON_3" , "CON_4" , "CON_5" , "CON_6" , "CON_7" , "CON_8" , "CON_9" , "CON_10" , "CON_11" , "CON_12" , 
-            "CON_13" , "CON_14" , "CON_15" , "CON_16" , "CON_17" , "CON_18" , "CON_19" , "CON_20" , "CON_21")
+in.donors <- c("ARI_1" , "ARI_2" , "ARI_3" , "ARI_4" , "ARI_5" , "ARI_6" , 
+                 "ARI_7" , "ARI_8" , "ARI_9" , "ARI_10" , "ARI_11" , "ARI_12" , 
+                 "ARI_13" , "ARI_14" , "ARI_15" , "ARI_16" , "ARI_17" , 
+                 "HC_1" , "HC_2" , "HC_3" , "HC_4" , "HC_5" , "HC_6" , 
+                 "HC_7" , "HC_8" , "HC_9" , "HC_10" , "HC_11" , "HC_12" , 
+                 "HC_13", "D_1", "D_2" , "D_3" , "D_4" , "D_5" , "D_6" , 
+                 "D_7" , "D_8" , "D_9" , "D_10" , "D_11" , "D_12" , 
+                 "D_13" , "D_14" , "D_15")
+donors <- c("ARI_1" , "ARI_2" , "ARI_3" , "ARI_4" , "ARI_5" , "ARI_6" , 
+            "ARI_7" , "ARI_8" , "ARI_9" , "ARI_10" , "ARI_11" , "ARI_12" , 
+            "ARI_13" , "ARI_14" , "ARI_15" , "ARI_16" , "ARI_17" , 
+            "HC_1" , "HC_2" , "HC_3" , "HC_4" , "HC_5" , "HC_6" , 
+            "HC_7" , "HC_8" , "HC_9" , "HC_10" , "HC_11" , "HC_12" , 
+            "HC_13")
 
-donors <- c("ARI_1","ARI_2","ARI_3","ARI_4","ARI_6","ARI_8","ARI_10","ARI_13","ARI_15","ARI_16",
-            "ARI_17","ARI_19","ARI_20","ARI_21","ARI_22","ARI_23","ARI_24",
-            "CON_1","CON_2","CON_7","CON_8","CON_10", "CON_12","CON_15","CON_16","CON_17", "CON_18",
-            "CON_19","CON_20","CON_21")
-
-sample.statuses <- c("experimental")
-
-expts <- c("386", "490", "537")
+batches <- c("1", "2", "3")
 
 clin.status <- c("at-risk", "control")
 clin.colors <- c("#B10906", "#5284A3") %>% setNames(clin.status) 
@@ -113,7 +112,7 @@ processBdata <- function(dt=dat,
   
   n.sample <- 8000
   set.seed(888)
-  subsampled <- dt[, .SD[sample(.N, n.sample)], by=.(expt)]
+  subsampled <- dt[, .SD[sample(.N, n.sample)], by=.(batch)]
   
   ggplot(subsampled, aes(CD27, CD20, fill=IgD)) + 
     geom_point(color="black", pch=21) +
@@ -134,7 +133,7 @@ processBdata <- function(dt=dat,
   
   n.sample <- 2000
   set.seed(888)
-  subsampled <- dt[, .SD[sample(.N, n.sample)], by=.(expt)]
+  subsampled <- dt[, .SD[sample(.N, n.sample)], by=.(batch)]
   
   ggplot(subsampled, aes(CD27, CD20, fill=non_B)) + 
     geom_point(color="black", pch=21) + 
@@ -148,12 +147,12 @@ processBdata <- function(dt=dat,
   # remove the extra (non-marker) channels in data
   dt[, (dump):=NULL]
   
-  dt <- dt[, `:=`(donor=factor(donor, levels=orig.donors),
+  dt <- dt[, `:=`(donor=factor(donor, levels=in.donors),
                   cell_type=factor(cell_type), 
                   condition=factor(condition, levels=conds), 
                   time=factor(time), 
-                  expt=factor(expt, levels=expts),
-                  sample_status=factor(sample_status, levels=sample.statuses))]
+                  batch=factor(batch, levels=batches),
+                  sample_status=factor(sample_status))]
   
   return(dt)
 }
@@ -171,11 +170,11 @@ isotypeBdata <- function(dt,
     
   ### Isotype labeling - heavy chain ###
   
-  # EXP-00386 isotypes
+  # Batch1 isotypes
   min(table(dt$donor))
   n.sample <- 300
   set.seed(888)
-  subsampled <- dt[expt=="386", .SD[sample(.N, n.sample)], by=.(donor)]
+  subsampled <- dt[batch=="1", .SD[sample(.N, n.sample)], by=.(donor)]
   
   ggplot(subsampled, aes(CD20, Lin, fill=CD27)) + 
     geom_point(color="black", pch=21) + 
@@ -214,34 +213,34 @@ isotypeBdata <- function(dt,
     theme(legend.position="none") + 
     geom_vline(xintercept=0.7) + geom_hline(yintercept=0.33)
   
-  dt[expt=="386", isotype:="ND"] 
-  dt[expt=="386" & IgD>0.28, isotype:="IgD"]
-  dt[expt=="386" & IgM>0.33, isotype:="IgM"]
-  dt[expt=="386" & (IgM>0.33 & IgD>0.28), isotype:="IgMD"]
-  dt[expt=="386" & (IgG>0.7 & IgD<0.28), isotype:="IgG"]
-  dt[expt=="386" & (IgA>0.76 & IgD<0.28), isotype:="IgA"]
-  dt[expt=="386" & ((IgG<0.7 & IgA<0.76) & (IgD<0.28 & IgM<0.33)), isotype:="surface_Ig-"]
-  dt[expt=="386" & (IgG>0.7 & IgA>0.76), isotype:="ND"]
-  dt[expt=="386" & (IgG>0.7 & IgD>0.28), isotype:="ND"]
-  dt[expt=="386" & (IgG>0.7 & IgM>0.33), isotype:="ND"]
-  dt[expt=="386" & (IgA>0.76 & IgD>0.28), isotype:="ND"]
-  dt[expt=="386" & (IgA>0.76 & IgM>0.33), isotype:="ND"]
+  dt[batch=="1", isotype:="ND"] 
+  dt[batch=="1" & IgD>0.28, isotype:="IgD"]
+  dt[batch=="1" & IgM>0.33, isotype:="IgM"]
+  dt[batch=="1" & (IgM>0.33 & IgD>0.28), isotype:="IgMD"]
+  dt[batch=="1" & (IgG>0.7 & IgD<0.28), isotype:="IgG"]
+  dt[batch=="1" & (IgA>0.76 & IgD<0.28), isotype:="IgA"]
+  dt[batch=="1" & ((IgG<0.7 & IgA<0.76) & (IgD<0.28 & IgM<0.33)), isotype:="surface_Ig-"]
+  dt[batch=="1" & (IgG>0.7 & IgA>0.76), isotype:="ND"]
+  dt[batch=="1" & (IgG>0.7 & IgD>0.28), isotype:="ND"]
+  dt[batch=="1" & (IgG>0.7 & IgM>0.33), isotype:="ND"]
+  dt[batch=="1" & (IgA>0.76 & IgD>0.28), isotype:="ND"]
+  dt[batch=="1" & (IgA>0.76 & IgM>0.33), isotype:="ND"]
   
   dt <- dt[, `:=` (donor=factor(donor),
                    cell_type=factor(cell_type), 
                    condition=factor(condition, levels=conds), 
                    time=factor(time), 
-                   expt=factor(expt),
-                   sample_status=factor(sample_status, levels=sample.statuses),
+                   batch=factor(batch),
+                   sample_status=factor(sample_status),
                    isotype=factor(isotype, levels=isotypes))]
     #dt[, .N, by=.(isotype)]
   
   
-  # EXP-00490 isotypes
+  # Batch2 isotypes
   min(table(dt$donor))
   n.sample <- 300
   set.seed(888)
-  subsampled <- dt[expt=="490", .SD[sample(.N, n.sample)], by=.(donor)]
+  subsampled <- dt[batch=="2", .SD[sample(.N, n.sample)], by=.(donor)]
   
   ggplot(subsampled, aes(CD20, Lin, fill=CD27)) + 
     geom_point(color="black", pch=21) + 
@@ -279,33 +278,33 @@ isotypeBdata <- function(dt,
     theme(legend.position="none") + 
     geom_vline(xintercept=0.77) + geom_hline(yintercept=0.34)
   
-  dt[expt=="490", isotype:="ND"] 
-  dt[expt=="490" & IgD>0.3, isotype:="IgD"]
-  dt[expt=="490" & IgM>0.34, isotype:="IgM"]
-  dt[expt=="490" & (IgM>0.34 & IgD>0.3), isotype:="IgMD"]
-  dt[expt=="490" & (IgG>0.77 & IgD<0.3), isotype:="IgG"]
-  dt[expt=="490" & (IgA>0.74 & IgD<0.3), isotype:="IgA"]
-  dt[expt=="490" & ((IgG<0.77 & IgA<0.74) & (IgD<0.3 & IgM<0.34)), isotype:="surface_Ig-"]
-  dt[expt=="490" & (IgG>0.77 & IgA>0.74), isotype:="ND"]
-  dt[expt=="490" & (IgG>0.77 & IgD>0.3), isotype:="ND"]
-  dt[expt=="490" & (IgG>0.77 & IgM>0.34), isotype:="ND"]
-  dt[expt=="490" & (IgA>0.74 & IgD>0.3), isotype:="ND"]
-  dt[expt=="490" & (IgA>0.74 & IgM>0.34), isotype:="ND"]
+  dt[batch=="2", isotype:="ND"] 
+  dt[batch=="2" & IgD>0.3, isotype:="IgD"]
+  dt[batch=="2" & IgM>0.34, isotype:="IgM"]
+  dt[batch=="2" & (IgM>0.34 & IgD>0.3), isotype:="IgMD"]
+  dt[batch=="2" & (IgG>0.77 & IgD<0.3), isotype:="IgG"]
+  dt[batch=="2" & (IgA>0.74 & IgD<0.3), isotype:="IgA"]
+  dt[batch=="2" & ((IgG<0.77 & IgA<0.74) & (IgD<0.3 & IgM<0.34)), isotype:="surface_Ig-"]
+  dt[batch=="2" & (IgG>0.77 & IgA>0.74), isotype:="ND"]
+  dt[batch=="2" & (IgG>0.77 & IgD>0.3), isotype:="ND"]
+  dt[batch=="2" & (IgG>0.77 & IgM>0.34), isotype:="ND"]
+  dt[batch=="2" & (IgA>0.74 & IgD>0.3), isotype:="ND"]
+  dt[batch=="2" & (IgA>0.74 & IgM>0.34), isotype:="ND"]
   
   dt <- dt[, `:=` (donor=factor(donor),
                    cell_type=factor(cell_type), 
                    condition=factor(condition, levels=conds), 
                    time=factor(time), 
-                   expt=factor(expt),
-                   sample_status=factor(sample_status, levels=sample.statuses),
+                   batch=factor(batch),
+                   sample_status=factor(sample_status),
                    isotype=factor(isotype, levels=isotypes))]
     #dt[, .N, by=.(isotype)]
   
   
-  # EXP-00537 isotypes
+  # Batch3 isotypes
   n.sample <- 300
   set.seed(888)
-  subsampled <- dt[expt=="537", .SD[sample(.N, n.sample)], by=.(donor)]
+  subsampled <- dt[batch=="3", .SD[sample(.N, n.sample)], by=.(donor)]
   
   ggplot(subsampled, aes(CD20, Lin, fill=CD27)) + 
     geom_point(color="black", pch=21) + 
@@ -345,25 +344,25 @@ isotypeBdata <- function(dt,
     theme(legend.position="none") + 
     geom_vline(xintercept=0.88) + geom_hline(yintercept=0.7)
   
-  dt[expt=="537", isotype:="ND"] 
-  dt[expt=="537" & IgD>0.7, isotype:="IgD"]
-  dt[expt=="537" & IgM>0.6, isotype:="IgM"]
-  dt[expt=="537" & (IgM>0.6 & IgD>0.7), isotype:="IgMD"]
-  dt[expt=="537" & (IgG>0.88 & IgD<0.7), isotype:="IgG"]
-  dt[expt=="537" & (IgA>0.78 & IgD<0.7), isotype:="IgA"]
-  dt[expt=="537" & ((IgG<0.88 & IgA<0.78) & (IgD<0.7 & IgM<0.6)), isotype:="surface_Ig-"]
-  dt[expt=="537" & (IgG>0.88 & IgA>0.78), isotype:="ND"]
-  dt[expt=="537" & (IgG>0.88 & IgD>0.7), isotype:="ND"]
-  dt[expt=="537" & (IgG>0.88 & IgM>0.6), isotype:="ND"]
-  dt[expt=="537" & (IgA>0.78 & IgD>0.7), isotype:="ND"]
-  dt[expt=="537" & (IgA>0.78 & IgM>0.6), isotype:="ND"]
+  dt[batch=="3", isotype:="ND"] 
+  dt[batch=="3" & IgD>0.7, isotype:="IgD"]
+  dt[batch=="3" & IgM>0.6, isotype:="IgM"]
+  dt[batch=="3" & (IgM>0.6 & IgD>0.7), isotype:="IgMD"]
+  dt[batch=="3" & (IgG>0.88 & IgD<0.7), isotype:="IgG"]
+  dt[batch=="3" & (IgA>0.78 & IgD<0.7), isotype:="IgA"]
+  dt[batch=="3" & ((IgG<0.88 & IgA<0.78) & (IgD<0.7 & IgM<0.6)), isotype:="surface_Ig-"]
+  dt[batch=="3" & (IgG>0.88 & IgA>0.78), isotype:="ND"]
+  dt[batch=="3" & (IgG>0.88 & IgD>0.7), isotype:="ND"]
+  dt[batch=="3" & (IgG>0.88 & IgM>0.6), isotype:="ND"]
+  dt[batch=="3" & (IgA>0.78 & IgD>0.7), isotype:="ND"]
+  dt[batch=="3" & (IgA>0.78 & IgM>0.6), isotype:="ND"]
   
   dt <- dt[, `:=` (donor=factor(donor),
                    cell_type=factor(cell_type), 
                    condition=factor(condition, levels=conds), 
                    time=factor(time), 
-                   expt=factor(expt),
-                   sample_status=factor(sample_status, levels=sample.statuses),
+                   batch=factor(batch),
+                   sample_status=factor(sample_status),
                    isotype=factor(isotype, levels=isotypes))]
     #dt[, .N, by=.(isotype)]
   
@@ -383,12 +382,12 @@ isotypeBdata <- function(dt,
   ggsave(paste0(pa, "isotype_b.png"))
   
   dt <- dt[!is.na(isotype)] %>% 
-    .[, `:=`(donor=factor(donor, levels=orig.donors),
+    .[, `:=`(donor=factor(donor, levels=in.donors),
              cell_type=factor(cell_type), 
              condition=factor(condition, levels=conds), 
              time=factor(time), 
-             expt=factor(expt, levels=expts),
-             sample_status=factor(sample_status, levels=sample.statuses), 
+             batch=factor(batch, levels=batches),
+             sample_status=factor(sample_status), 
              isotype=factor(isotype, levels=isotypes))]
   
   return(dt)
@@ -409,11 +408,11 @@ somCluster <- function(dt, channels, ...) {
   return(as.factor(som.out$mapping[,1]))
 }
 
-clusterBDataExp537 <- function(dt=dat[expt=="537"], 
+clusterBData3 <- function(dt=dat[batch=="3"], 
                          subset.markers=setdiff(colnames(dat), c(factors, intracellular, "Lin", "Viability")), 
                          all.markers=setdiff(colnames(dat), c(factors, intracellular, "Viability")), 
-                         pa=clusterimages.path) {
-  # Calls somCluster and then metaclusters flow data into 8 B cell populations for EXP-00537
+                         pa=images.path) {
+  # Calls somCluster and then metaclusters flow data into 8 B cell populations for Batch3
   # "CD27_neg_Effector", "CD27_pos_Effector", "Early_Memory", "Core_Memory", "CD95_Memory", "Transitional", "Naive", "Plasma"
   # Inputs:
   #   dt - data.table
@@ -432,7 +431,7 @@ clusterBDataExp537 <- function(dt=dat[expt=="537"],
   medians.mat[medians.mat>1] <- 1
   
   #pheatmap(mat=medians.mat, color=magma(20), legend=T, border_color=NA,
-  #         filename=paste0(pa, "ARI_HC_EXP_00537_cluster_heatmap.png"), width=18, height=10)
+  #         filename=paste0(pa, "ARI_HC_3_cluster_heatmap.png"), width=18, height=10)
   #dev.off()
   
   ###
@@ -475,12 +474,6 @@ clusterBDataExp537 <- function(dt=dat[expt=="537"],
     scale_size_continuous(range = c(2, 18)) + theme_bw() + scale_fill_viridis(option="B") + 
     theme(legend.position="none") + 
     geom_vline(xintercept=0.71) + geom_hline(yintercept=0.68)
-  
-  ggplot(medians[is.na(meta)], aes(CD21, CD27, fill=CD11c, size=count)) + geom_point(color="black", pch=21) +
-    geom_text(aes(label=cluster), hjust=0.5, vjust=0, size=6, color="dark gray") + 
-    scale_size_continuous(range = c(2, 18)) + theme_bw() + scale_fill_viridis(option="B") + 
-    theme(legend.position="none") + 
-    geom_vline(xintercept=0.5) + geom_hline(yintercept=0.68)
 
   medians[is.na(meta) & (CD11c>0.71 & CD20>0.8 & CD21<0.5 & CD27>0.68), meta:="CD27_pos_Effector"]
   medians[is.na(meta) & (CD11c>0.71 & CD20>0.8 & CD21<0.5 & CD27<0.68), meta:="CD27_neg_Effector"]
@@ -635,29 +628,29 @@ clusterBDataExp537 <- function(dt=dat[expt=="537"],
   
   #pheatmap(mat=clust.mat, annotation_col=clust.annot, annotation_colors=ac, 
   #         color=magma(50), legend=F, border_color=NA, 
-  #         filename=paste0(pa, "ARI_HC_EXP_00537_cluster_heatmap_final.png"), width=20, height=10)
+  #         filename=paste0(pa, "ARI_HC_3_cluster_heatmap_final.png"), width=20, height=10)
   #dev.off()
   
   #final clustered data
-  dt537 <- dt[!is.na(meta)] %>% 
+  dt3 <- dt[!is.na(meta)] %>% 
     .[, cluster:=NULL] %>%
     .[, `:=`(donor=factor(donor),
              cell_type=factor(cell_type), 
              condition=factor(condition, levels=conds), 
              time=factor(time), 
-             expt=factor(expt), 
-             sample_status=factor(sample_status, levels=sample.statuses),
+             batch=factor(batch), 
+             sample_status=factor(sample_status),
              isotype=factor(isotype, levels=isotypes), 
              meta=factor(meta, levels=subsets))]
   #optional: save data with B cell cluster/metacluster assignments as csv file
-  #fwrite(dt537, file=paste0(path, "bcell_clustered_flow_data_00537.csv"))
+  #fwrite(dt3, file=paste0(path, "bcell_clustered_flow_data_3.csv"))
 }
 
-clusterBDataExp490 <- function(dt=dat[expt=="490"], 
+clusterBData2 <- function(dt=dat[batch=="2"], 
                                subset.markers=setdiff(colnames(dat), c(factors, intracellular, "Lin", "Viability")), 
                                all.markers=setdiff(colnames(dat), c(factors, intracellular, "Viability")), 
-                               pa=clusterimages.path) {
-  # Calls somCluster and then metaclusters flow data into 8 B cell populations for EXP-00490
+                               pa=images.path) {
+  # Calls somCluster and then metaclusters flow data into 8 B cell populations for Batch2
   # "CD27_neg_Effector", "CD27_pos_Effector", "Early_Memory", "Core_Memory", "CD95_Memory", "Transitional", "Naive", "Plasma"
   # Inputs:
   #   dt - data.table
@@ -676,7 +669,7 @@ clusterBDataExp490 <- function(dt=dat[expt=="490"],
   medians.mat[medians.mat>1] <- 1
   
   #pheatmap(mat=medians.mat, color=magma(20), legend=T, border_color=NA,
-  #         filename=paste0(pa, "ARI_HC_EXP_00490_cluster_heatmap.png"), width=18, height=10)
+  #         filename=paste0(pa, "ARI_HC_2_cluster_heatmap.png"), width=18, height=10)
   #dev.off()
   
   ###
@@ -881,29 +874,29 @@ clusterBDataExp490 <- function(dt=dat[expt=="490"],
   
   #pheatmap(mat=clust.mat, annotation_col=clust.annot, annotation_colors=ac, 
   #         color=magma(50), legend=F, border_color=NA, 
-  #         filename=paste0(pa, "ARI_HC_EXP_00490_cluster_heatmap_final.png"), width=20, height=10)
+  #         filename=paste0(pa, "ARI_HC_2_cluster_heatmap_final.png"), width=20, height=10)
   #dev.off()
   
   #final clustered data
-  dt490 <- dt[!is.na(meta)] %>% 
+  dt2 <- dt[!is.na(meta)] %>% 
     .[, cluster:=NULL] %>%
     .[, `:=`(donor=factor(donor),
              cell_type=factor(cell_type), 
              condition=factor(condition, levels=conds), 
              time=factor(time), 
-             expt=factor(expt), 
-             sample_status=factor(sample_status, levels=sample.statuses),
+             batch=factor(batch), 
+             sample_status=factor(sample_status),
              isotype=factor(isotype, levels=isotypes), 
              meta=factor(meta, levels=subsets))]
   #optional: save data with B cell cluster/metacluster assignments as csv file
-  #fwrite(dt490, file=paste0(path, "bcell_clustered_flow_data_00490.csv"))
+  #fwrite(dt2, file=paste0(path, "bcell_clustered_flow_data_2.csv"))
 }
 
-clusterBDataExp386 <- function(dt=dat[expt=="386"], 
+clusterBData1 <- function(dt=dat[batch=="1"], 
                                subset.markers=setdiff(colnames(dat), c(factors, intracellular, "Lin", "Viability")), 
                                all.markers=setdiff(colnames(dat), c(factors, intracellular, "Viability")), 
-                               pa=clusterimages.path) {
-  # Calls somCluster and then metaclusters flow data into 8 B cell populations for EXP-00386
+                               pa=images.path) {
+  # Calls somCluster and then metaclusters flow data into 8 B cell populations for Batch1
   # "CD27_neg_Effector", "CD27_pos_Effector", "Early_Memory", "Core_Memory", "CD95_Memory", "Transitional", "Naive", "Plasma"
   # Inputs:
   #   dt - data.table
@@ -922,7 +915,7 @@ clusterBDataExp386 <- function(dt=dat[expt=="386"],
   medians.mat[medians.mat>1] <- 1
   
   #pheatmap(mat=medians.mat, color=magma(20), legend=T, border_color=NA,
-  #         filename=paste0(pa, "ARI_HC_EXP_00386_cluster_heatmap.png"), width=18, height=10)
+  #         filename=paste0(pa, "ARI_HC_1_cluster_heatmap.png"), width=18, height=10)
   # dev.off()
   
   ###
@@ -1125,71 +1118,23 @@ clusterBDataExp386 <- function(dt=dat[expt=="386"],
   
   #pheatmap(mat=clust.mat, annotation_col=clust.annot, annotation_colors=ac, 
   #         color=magma(50), legend=F, border_color=NA, 
-  #          filename=paste0(pa, "ARI_HC_EXP_00386_cluster_heatmap_final.png"), width=20, height=10)
+  #          filename=paste0(pa, "ARI_HC_1_cluster_heatmap_final.png"), width=20, height=10)
   # dev.off()
   
   #final clustered data
-  dt386 <- dt[!is.na(meta)] %>% 
+  dt1 <- dt[!is.na(meta)] %>% 
     .[, cluster:=NULL] %>%
     .[, `:=`(donor=factor(donor),
              cell_type=factor(cell_type), 
              condition=factor(condition, levels=conds), 
              time=factor(time), 
-             expt=factor(expt), 
-             sample_status=factor(sample_status, levels=sample.statuses),
+             batch=factor(batch), 
+             sample_status=factor(sample_status),
              isotype=factor(isotype, levels=isotypes), 
              meta=factor(meta))]
   #optional: save data with B cell cluster/metacluster assignments as csv file
-  #fwrite(dt386, file=paste0(path, "bcell_clustered_flow_data_00386.csv"))
+  #fwrite(dt1, file=paste0(path, "bcell_clustered_flow_data_1.csv"))
 }
-
-metaDataMerge <- function(dt=dat,
-                          pa=meta.dat.path) {
-  # Merges  donor metadata into cleaned and clustered B cell data table 
-  # Inputs:
-  #   dt - merged data.table with B cell metaclusters 
-  #   pa - path to data folder
-  # Outputs:
-  #   merged data table with metadata columns
-  
-  print("Adding metadata to data table")
-  
-  # merge in metadata to cytometry data table
-  metadat <- fread(pa) %>%
-    as.data.table() %>%
-    .[, `:=`(donor=factor(donor, levels=orig.donors), 
-             status=factor(status, levels=clin.status), 
-             sex=factor(sex),
-             race=factor(race), 
-             cohort=factor(cohort),
-             subject=factor(subject), 
-             age=factor(age),
-             anti_ccp3_status=factor(anti_ccp3_status), 
-             rf_iga_status=factor(rf_iga_status), 
-             rf_igm_status=factor(rf_igm_status))] 
-  
-  dt <- merge(dt, metadat, by="donor") %>%
-    as.data.table() %>%
-    .[, `:=`(expt=factor(expt, levels=expts), 
-             donor=factor(donor, levels=orig.donors),
-             cell_type=factor(cell_type), 
-             condition=factor(condition),
-             time=factor(time), 
-             isotype=factor(isotype, levels=isotypes), 
-             status=factor(status, levels=clin.status), 
-             meta=factor(meta, levels=subsets),
-             sex=factor(sex),
-             race=factor(race), 
-             cohort=factor(cohort),
-             subject=factor(subject), 
-             age=factor(age),
-             anti_ccp3_status=factor(anti_ccp3_status), 
-             rf_iga_status=factor(rf_iga_status), 
-             rf_igm_status=factor(rf_igm_status))]
-  
-  return (dt)
-}
-
 
 setCutoffsUnstim <- function(dt=dat, 
                              cyt=intracellular, 
@@ -1208,7 +1153,7 @@ setCutoffsUnstim <- function(dt=dat,
   
   dt[, `:=`(TNFa_pos=F, IL_6_pos=F, IL_10_pos=F, RANKL_pos=F)]
   
-  for (d in orig.donors) {
+  for (d in in.donors) {
     for (m in subsets) {
       
       cutoffs.per <- dt[meta==m & donor==d & condition=="unstimulated", lapply(.SD, quantile, probs=c(quant), na.rm=T), .SDcols=cyt] %>% 
@@ -1223,9 +1168,9 @@ setCutoffsUnstim <- function(dt=dat,
   
   n.sample <- 3000
   set.seed(888)
-  subsampled <- dt[, .SD[sample(.N, n.sample)], by=.(expt)] 
+  subsampled <- dt[, .SD[sample(.N, n.sample)], by=.(batch)] 
   
-  ggplot(subsampled[CD20>0.65 & expt=="490"], aes(CD20, TNFa, fill=TNFa_pos)) + 
+  ggplot(subsampled[CD20>0.65 & batch=="2"], aes(CD20, TNFa, fill=TNFa_pos)) + 
     geom_point(color="black", pch=21, size=6) + 
     scale_fill_manual(values=c('#EFBFBD', '#2F4858')) +
     xlim(0, 1.0) +
@@ -1309,209 +1254,17 @@ setCutoffsUnstim <- function(dt=dat,
   return(dt)
 }
 
-setCutoffsCD69 <- function(dt=dat, 
-                           pa=processimages.path) {
-  # Identify cutoffs for and label CD69+ B cells
-  # based on biaxial expression plot evaluation
-  # Inputs:
-  #   dt - data.table
-  #   pa - path to images folder
-  # Outputs:
-  #   dt - data.table
-  
-  print("Setting cutoffs CD69+ B cells")
-  
-  # EXP-00537 cutoffs
-  
-  n.sample <- 10000
-  set.seed(888)
-  subsampled <- dt[expt=="537", .SD[sample(.N, n.sample)], by=.(condition)] 
-  
-  ggplot(subsampled, aes(CD20, CD69, fill=RANKL)) + 
-    geom_point(color="black", pch=21) + 
-    scale_fill_viridis(option="B") + 
-    theme(legend.position="right") + 
-    theme_minimal() + 
-    geom_vline(xintercept=0.55) + geom_hline(yintercept=0.7)
-  
-  dt[, `:=`(CD69_pos=F)]
-  
-  dt[CD69>0.7 & expt=="537", CD69_pos:=T]
-  
-  dt[expt=="537", .N, by=.(CD69_pos)]
-  
-  n.sample <- 3000
-  set.seed(888)
-  subsampled <- dt[expt=="537", .SD[sample(.N, n.sample)], by=.(condition)] %>% 
-    .[, meta:=factor(meta, levels=subsets)]
-  
-  ggplot(subsampled[CD69_pos==T], aes(TNFa, CD69, fill=condition)) + 
-    geom_point(color="black", pch=21) + 
-    theme(legend.position="right") + 
-    theme_minimal() + 
-    geom_hline(yintercept=0.7)
-
-  ggplot(subsampled, aes(IL_6, CD69, fill=CD69_pos)) + 
-    geom_point(color="black", pch=21) + 
-    scale_fill_manual(values=c('#EFBFBD', '#2F4858')) +
-    theme(legend.position="right") + 
-    theme_minimal() + ylim(0.2, 1.1) +
-    geom_vline(xintercept=0.45) + geom_hline(yintercept=0.7)
-
-  # EXP-00490 cutoffs
-  n.sample <- 10000
-  set.seed(888)
-  subsampled <- dt[expt=="490", .SD[sample(.N, n.sample)], by=.(condition)] 
-  
-  ggplot(subsampled, aes(CD20, CD69, fill=RANKL)) + 
-    geom_point(color="black", pch=21) + 
-    scale_fill_viridis(option="B") + 
-    theme(legend.position="right") + 
-    theme_minimal() + 
-    ylim(0.2,1.1) +
-    geom_vline(xintercept=0.6) + geom_hline(yintercept=0.7)
-  
-  dt[CD69>0.7 & expt=="490", CD69_pos:=T]
-  
-  dt[expt=="490", .N, by=.(CD69_pos)]
-  
-  n.sample <- 4000
-  set.seed(888)
-  subsampled <- dt[expt=="490", .SD[sample(.N, n.sample)], by=.(condition)] %>% 
-    .[, meta:=factor(meta, levels=subsets)]
-  
-  ggplot(subsampled[CD69_pos==T], aes(TNFa, CD69, fill=condition)) + 
-    geom_point(color="black", pch=21) + 
-    theme(legend.position="right") + 
-    theme_minimal() + 
-    geom_hline(yintercept=0.7)
-
-  ggplot(subsampled, aes(IL_6, CD69, fill=CD69_pos)) + 
-    geom_point(color="black", pch=21) + 
-    scale_fill_manual(values=c('#EFBFBD', '#2F4858')) +
-    theme(legend.position="right") + 
-    theme_minimal() + ylim(0.2, 1.1) +
-    geom_vline(xintercept=0.75) + geom_hline(yintercept=0.7)
-
-  # EXP-00386 cutoffs
-  n.sample <- 3000
-  set.seed(888)
-  subsampled <- dt[expt=="386", .SD[sample(.N, n.sample)], by=.(condition)]
-  
-  ggplot(subsampled, aes(TNFa, CD69, fill=IgD)) + 
-    geom_point(color="black", pch=21) + 
-    scale_fill_viridis(option="B") + 
-    theme(legend.position="right") + 
-    theme_minimal() + 
-    geom_vline(xintercept=0.7) + geom_hline(yintercept=0.7)
-  
-  dt[CD69>0.7 & expt=="386", CD69_pos:=T]
-  
-  dt[expt=="386", .N, by=.(CD69_pos)]
-  
-  n.sample <- 3000
-  set.seed(888)
-  subsampled <- dt[expt=="386", .SD[sample(.N, n.sample)], by=.(condition)] %>% 
-    .[, meta:=factor(meta, levels=subsets)]
-  
-  ggplot(subsampled[CD69_pos==T], aes(TNFa, CD69, fill=condition)) + 
-    geom_point(color="black", pch=21) + 
-    theme(legend.position="right") + 
-    theme_minimal() + 
-    geom_hline(yintercept=0.7)
-
-  ggplot(subsampled, aes(IL_6, CD69, fill=CD69_pos)) + 
-    geom_point(color="black", pch=21) + 
-    scale_fill_manual(values=c('#EFBFBD', '#2F4858')) +
-    theme(legend.position="right") + 
-    theme_minimal() + ylim(0.25, 1.1) +
-    geom_vline(xintercept=0.75) + geom_hline(yintercept=0.7)
-
-  return(dt)
-}
-
-remDonor <- function(dt=dat) {
-  # Identify and remove subject/donor data with low B cell counts before final analyses 
-  # Remove data for 1 HC2 (control) donor with elevated CCP3 levels detected
-  # Inputs:
-  #   dt - data.table
-  # Outputs:
-  #   dt - data.table
-  
-  print("Removing donors with low B cell numbers and HC2 control samples with CCP3 levels >10 from the data")
-  
-  rem.dons <- dt[, .N, by=.(donor, anti_ccp3, status, condition)] %>% 
-    .[(status=="control" & anti_ccp3>10) | (N<300 & condition=="CpG_CD40_stimulated")] %>% 
-    .[, donor] %>%
-    as.vector(.) %>% 
-    unique(.)
-  
-  dt <- dt[!(dt$donor %in% rem.dons),]
-  
-  return(dt)
-}
-
-metaCheck <- function(dt=dat, 
-                      mc=subset.colors, 
-                      pa=clusterimages.path) {
-  # Generates boxplots and biaxials of CD20 expression by B cell metacluster 
-  # To check all metaclusters for true B cell subset
-  # Inputs:
-  #   dt - merged data.table with all B cell metaclusters 
-  #   mc - named vector of metacluster colors
-  #   pa - path to images folder
-  # Outputs:
-  #   eps of CD20 expression box plots and biaxial plots by metacluster
-  
-  CD20meta <- dt[, c(lapply(.SD, mean, na.rm=TRUE), .N), 
-                 by=.(meta), 
-                 .SDcols="CD20"] %>% 
-    .[meta!="Non-B"] %>% 
-    .[, meta:=factor(meta, levels=subsets)]
-  
-  ggplot(CD20meta, aes(meta, CD20)) + 
-    geom_col(aes(fill=meta), color="black", width=0.6) +
-    ylim(c(0, 1)) +
-    ylab("CD20 mean expression") +
-    xlab("Metacluster") + 
-    theme_bw() +
-    scale_fill_manual(values=mc, guide="none") +
-    theme(text=element_text(size=15), 
-          panel.grid=element_blank(), 
-          axis.ticks=element_line(size=1), 
-          axis.text.x=element_text(size=10, angle=90, hjust=1))
-  ggsave(paste0(pa, "CD20_meta_check.png"), width=15, height=10)
-  
-  HLADRmeta <- dt[, c(lapply(.SD, mean, na.rm=TRUE), .N), 
-                 by=.(meta), 
-                 .SDcols="HLA_DR"] %>% 
-    .[meta!="Non-B"] %>% 
-    .[, meta:=factor(meta, levels=subsets)]
-  
-  ggplot(HLADRmeta, aes(meta, HLA_DR)) + 
-    geom_col(aes(fill=meta), color="black", width=0.6) +
-    ylim(c(0, 1)) +
-    ylab("HLA_DR mean expression") +
-    xlab("Metacluster") + 
-    theme_bw() +
-    scale_fill_manual(values=mc, guide="none") +
-    theme(text=element_text(size=15), 
-          panel.grid=element_blank(), 
-          axis.ticks=element_line(size=1), 
-          axis.text.x=element_text(size=10, angle=90, hjust=1))
-  #ggsave(paste0(pa, "HLA_DR_meta_check.png"), width=15, height=10)
-}
 
 ###### MAIN ######
 
 #upload processed flow viable B cell data
 dat <- fread(dat.path) %>%
-  .[, `:=`(donor=factor(donor, levels=orig.donors),
+  .[, `:=`(donor=factor(donor, levels=in.donors),
            cell_type=factor(cell_type), 
            condition=factor(condition, levels=conds), 
            time=factor(time), 
-           expt=factor(expt, levels=expts), 
-           sample_status=factor(sample_status, levels=sample.statuses))]
+           batch=factor(batch, levels=batches), 
+           sample_status=factor(sample_status))]
 # B cell isolation and isotype labeling
 dat.b <- processBdata() %>% 
   isotypeBdata()
@@ -1520,56 +1273,44 @@ dat.b[, .N, by=isotype]
 fwrite(dat.b, file=paste0(path, "bcell_processed_flow_data_isotypes.csv"))
 #proceed with cleaned and isotype-labeled B cell data 
 dat <- dat.b %>%
-  .[, `:=`(donor=factor(donor, levels=orig.donors),
+  .[, `:=`(donor=factor(donor, levels=in.donors),
            cell_type=factor(cell_type), 
            condition=factor(condition, levels=conds), 
            time=factor(time), 
-           expt=factor(expt, levels=expts), 
-           sample_status=factor(sample_status, levels=sample.statuses),
+           batch=factor(batch, levels=batches), 
+           sample_status=factor(sample_status),
            isotype=factor(isotype, levels=isotypes))] 
 #cluster flow B cell data
-clusterBDataExp537()
-clusterBDataExp490()
-clusterBDataExp386()
-temp <- merge(dt537, dt490, all=T) %>%
+clusterBData3()
+clusterBData2()
+clusterBData1()
+temp <- merge(dt3, dt2, all=T) %>%
   as.data.table() 
-dat <- merge(temp, dt386, all=T) %>%
+dat <- merge(temp, dt1, all=T) %>%
   as.data.table() %>%
-  .[, `:=`(donor=factor(donor, levels=orig.donors),
+  .[, `:=`(donor=factor(donor, levels=in.donors),
            cell_type=factor(cell_type), 
            condition=factor(condition, levels=conds), 
            time=factor(time), 
-           expt=factor(expt, levels=expts), 
-           sample_status=factor(sample_status, levels=sample.statuses),
+           batch=factor(batch, levels=batches), 
+           sample_status=factor(sample_status),
            isotype=factor(isotype, levels=isotypes), 
            meta=factor(meta, levels=subsets))]
-dat[, .N, by=.(expt, meta)]
-sum((dt537[,.N]), (dt490[,.N]), (dt386[,.N]))
+dat[, .N, by=.(batch, meta)]
+sum((dt3[,.N]), (dt2[,.N]), (dt1[,.N]))
 dat[,.N]
-dat <- metaDataMerge() %>% 
-  setCutoffsUnstim() %>% 
-  setCutoffsCD69() %>%
-  remDonor() %>% 
-  .[, `:=`(expt=factor(expt, levels=expts), 
-           donor=factor(donor, levels=donors),
+dat <- setCutoffsUnstim() %>% 
+  .[status!="na"] %>% 
+  .[, `:=`(donor=factor(donor, levels=donors),
            cell_type=factor(cell_type), 
-           condition=factor(condition),
+           condition=factor(condition, levels=conds), 
            time=factor(time), 
+           batch=factor(batch, levels=batches), 
+           status=factor(status, levels=clin.status),
+           sample_status=factor(sample_status),
            isotype=factor(isotype, levels=isotypes), 
-           status=factor(status, levels=clin.status), 
-           meta=factor(meta, levels=subsets),
-           sex=factor(sex),
-           race=factor(race), 
-           cohort=factor(cohort),
-           subject=factor(subject), 
-           age=factor(age),
-           anti_ccp3_status=factor(anti_ccp3_status), 
-           rf_iga_status=factor(rf_iga_status), 
-           rf_igm_status=factor(rf_igm_status))] %>% 
+           meta=factor(meta, levels=subsets))] %>% 
   .[!is.na(donor)]
-
-#optional metaclustered data check
-#metaCheck()
 
 #save single-cell data file with B cell metacluster assignments
 fwrite(dat, file=paste0(path, "bcell_clustered_flow_data.csv"))
