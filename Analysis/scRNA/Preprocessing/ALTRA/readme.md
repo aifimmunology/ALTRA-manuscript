@@ -42,4 +42,4 @@ This notebook focuses on identifying and removing doublets from the dataset.
 
 ## 07: Pseudobulk
 
-This notebook describes the process of creating pseudobulk samples from single-cell data.
+This folder contains notebooks describes the process of creating pseudobulk samples from single-cell data.
