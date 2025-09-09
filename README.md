@@ -1,5 +1,8 @@
 # ALTRA-manuscript
 This repository contains Jupyter notebooks and scripts for the ALTRA manuscript data analysis and figures
+## DATA APP
+This is an in-house develpoed application for exploration of ALTRA data with interactive visualizations 
+https://apps.allenimmunology.org/aifi/insights/ra-progression/analysis/
 
 ## Notebooks Overview
 
